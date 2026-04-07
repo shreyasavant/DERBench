@@ -1,0 +1,129 @@
+{
+  "metadata": {
+    "category": "DER Forecasting",
+    "tier": "L2",
+    "source_platforms": [
+      {
+        "name": "NREL Solar Radiation Research Laboratory (SRRL)",
+        "url": "https://midcdmz.nrel.gov/srrl_bms/",
+        "type": "open_dataset",
+        "last_accessed": "2025-03-01"
+      },
+      {
+        "name": "pvlib-python",
+        "url": "https://pvlib-python.readthedocs.io/",
+        "type": "simulation_tool",
+        "last_accessed": "2025-03-01"
+      },
+      {
+        "name": "GEFCom2014 Solar Track",
+        "url": "https://en.wikipedia.org/wiki/Global_Energy_Forecasting_Competition",
+        "type": "forecasting_competition",
+        "last_accessed": "2025-03-01"
+      }
+    ],
+    "ground_truth_references": [
+      "NREL SRRL measured irradiance data for Phoenix/Albuquerque scenarios",
+      "IEA PVPS Task 16 forecast accuracy baselines for NWP vs measurement-based methods",
+      "Marion et al. snow-loss model for Toronto winter scenario"
+    ],
+    "de_biasing_applied": [
+      "Open-ended analysis: scenarios ask 'explain why' not 'which answer is correct'",
+      "Numeric neutrality: no preset number of causes or recommendations expected",
+      "Location identifiers generalized (could be adapted to any similar climate)"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "forecasting_L2_001",
+      "category": "DER Forecasting",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": ["domain_knowledge", "situational_reasoning"],
+      "prompt": "Given the historical PV generation data and weather forecast below, explain why the day-ahead PV forecast is likely to exhibit higher error than usual on the forecast day. Identify the most probable meteorological cause and recommend a forecasting strategy adjustment.",
+      "context": {
+        "site": "5 MW ground-mount PV plant, fixed-tilt 25 deg, azimuth 180 deg, location 33.4N 112.0W (Phoenix, AZ)",
+        "historical_clear_day_peak": "4.6 MW at 12:30 local time under GHI ~950 W/m2",
+        "yesterday_generation_profile_kW": [0, 0, 0, 0, 0, 120, 980, 2400, 3600, 4200, 4500, 4580, 4600, 4550, 4300, 3500, 2200, 900, 100, 0, 0, 0, 0, 0],
+        "nwp_forecast_for_tomorrow": {
+          "cloud_cover_pct": [5, 5, 5, 10, 40, 70, 85, 60, 30, 10, 5, 5],
+          "time_labels": ["06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"],
+          "precip_probability_pct": [0, 0, 0, 5, 30, 55, 60, 35, 10, 0, 0, 0],
+          "forecast_ghi_wm2": [50, 200, 450, 600, 400, 250, 180, 350, 550, 700, 500, 200]
+        },
+        "notes": "North American Monsoon season, July. Region experiences convective afternoon thunderstorms with highly variable cloud cover."
+      },
+      "tools": [],
+      "ground_truth": "The forecast day shows a mid-morning to early-afternoon cloud cover surge (peaking at 85% around noon) with significant precipitation probability (up to 60%), characteristic of North American Monsoon convective activity. This causes a pronounced midday dip in forecast GHI (down to 180 W/m2 at 12:00) compared to the clear-sky baseline of ~950 W/m2. Day-ahead NWP models have well-documented difficulty with the precise timing, spatial extent, and intensity of convective cells during monsoon season, leading to large ramp-rate errors and timing offsets. The recommended adjustment is to (1) use ensemble NWP forecasts to capture the range of possible convective outcomes, (2) apply probabilistic forecasting to communicate uncertainty bounds rather than a single deterministic trace, and (3) consider intra-day forecast updates using satellite-derived cloud motion vectors as the convective activity develops.",
+      "metrics": ["accuracy"],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "forecasting_L2_002",
+      "category": "DER Forecasting",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": ["domain_knowledge", "situational_reasoning"],
+      "prompt": "A utility is choosing between two forecasting approaches for a distribution feeder with 3.2 MW of aggregated rooftop PV. Approach A is a single NWP-based model using the nearest grid point (4 km resolution). Approach B uses smart meter data from 15 representative PV systems on the feeder combined with a machine learning model. Compare the two approaches for a 1-hour-ahead operational forecast use case and recommend which is more suitable. Justify your answer with reference to the spatial scale of the problem.",
+      "context": {
+        "feeder_info": {
+          "total_pv_capacity_kw": 3200,
+          "number_of_pv_systems": 187,
+          "feeder_length_km": 6.5,
+          "geographic_spread_km2": 4.2
+        },
+        "approach_a": {
+          "method": "NWP post-processed with MOS",
+          "spatial_resolution_km": 4,
+          "update_frequency": "every 6 hours",
+          "historical_mape_site_level": "22%"
+        },
+        "approach_b": {
+          "method": "Gradient boosted trees trained on smart meter + satellite imagery",
+          "input_features": ["15 representative PV system real-time outputs", "lagged generation values", "satellite-derived cloud index"],
+          "update_frequency": "every 15 minutes",
+          "historical_mape_site_level": "14%"
+        },
+        "use_case": "1-hour-ahead forecast for volt-var optimization on the feeder"
+      },
+      "tools": [],
+      "ground_truth": "Approach B is more suitable for this use case. At the 1-hour-ahead horizon, local measurement-based models consistently outperform NWP-based methods because (1) short-term cloud dynamics are better captured by recent observations than by NWP models updated only every 6 hours, (2) the feeder spans only ~4.2 km2, which is comparable to or smaller than the NWP grid cell (4 km ~ 16 km2), meaning the NWP cannot resolve intra-feeder spatial variability, (3) the 15 representative smart meter inputs provide real-time ground truth on the actual irradiance conditions across the feeder, naturally capturing partial shading and local cloud patterns, and (4) the 15-minute update cycle of Approach B allows rapid adaptation to changing conditions. The lower historical MAPE (14% vs. 22%) corroborates this. For the volt-var optimization use case, the higher accuracy and faster update rate are critical since voltage regulation decisions on distribution feeders are sensitive to forecast errors as small as 5-10% of feeder PV capacity.",
+      "metrics": ["accuracy"],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "forecasting_L2_003",
+      "category": "DER Forecasting",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": ["domain_knowledge", "situational_reasoning"],
+      "prompt": "A PV forecast system has been producing the following daily nRMSE values over the past week. Analyze the error pattern and identify the most likely root cause. Suggest a diagnostic step to confirm your hypothesis.",
+      "context": {
+        "site": "2 MW rooftop PV, tilt 10 deg, Toronto, Canada, late January",
+        "daily_nrmse_pct": {
+          "Mon": 8.2,
+          "Tue": 7.5,
+          "Wed": 32.1,
+          "Thu": 35.8,
+          "Fri": 9.1,
+          "Sat": 7.9,
+          "Sun": 8.4
+        },
+        "weather_conditions": {
+          "Mon": "clear, -5C",
+          "Tue": "clear, -3C",
+          "Wed": "heavy snow 15cm accumulation, -8C",
+          "Thu": "clear skies but -10C, snow on ground",
+          "Fri": "clear, 2C, above-freezing midday",
+          "Sat": "clear, 1C",
+          "Sun": "partly cloudy, -2C"
+        },
+        "forecast_method": "NWP-based irradiance forecast with power conversion model (no snow-loss module)"
+      },
+      "tools": [],
+      "ground_truth": "The error spike on Wednesday and Thursday is most likely caused by snow cover on the PV panels. Wednesday's heavy snowfall (15 cm) deposited snow on the low-tilt (10 deg) rooftop array, which persisted into Thursday due to sub-zero temperatures (-10C). The forecast model lacks a snow-loss module, so it predicted normal output based on the NWP irradiance forecast (which was correct -- Thursday had clear skies), but actual generation was severely curtailed by snow covering the panels. By Friday, above-freezing midday temperatures (2C) likely melted or caused the snow to slide off, restoring normal generation and forecast accuracy. The diagnostic step is to compare Thursday's forecast irradiance (which should show high clear-sky values) against actual inverter-level AC output; a large gap on a clear-sky day with recent snow confirms panel snow coverage. Additionally, checking if soiling/snow sensors or webcam images are available at the site would provide direct confirmation. The fix is to integrate a snow-loss model (e.g., Marion et al. or Townsend-Powers model) that accounts for snowfall, tilt angle, and ambient temperature in the power conversion step.",
+      "metrics": ["accuracy"],
+      "scoring": "rubric"
+    }
+  ]
+}

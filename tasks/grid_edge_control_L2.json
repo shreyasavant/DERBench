@@ -1,0 +1,226 @@
+{
+  "metadata": {
+    "category": "Grid-Edge Control",
+    "tier": "L2",
+    "source_platforms": [
+      {
+        "name": "IEEE 13-Bus Test Feeder",
+        "url": "https://cmte.ieee.org/pes-testfeeders/resources/",
+        "type": "test_feeder"
+      },
+      {
+        "name": "pandapower",
+        "url": "https://www.pandapower.org/",
+        "type": "simulation_tool"
+      },
+      {
+        "name": "EPRI DPV Integration Portal",
+        "url": "https://www.epri.com/research/products/000000003002004777",
+        "type": "analysis_tool"
+      },
+      {
+        "name": "NREL Advanced Inverter Reports",
+        "url": "https://www.nrel.gov/grid/solar-integration-data",
+        "type": "technical_report",
+        "writeup": "NREL/TP-5D00-72063: Advanced Inverter Functions to Support High Levels of DER"
+      }
+    ],
+    "ground_truth_references": [
+      "IEEE 13-bus feeder published voltage profiles under high-PV scenarios",
+      "NREL documented volt-var performance results on test feeders",
+      "EPRI published BESS dispatch strategies for voltage support"
+    ],
+    "de_biasing_applied": [
+      "Open-ended: 'identify which buses have violations' without specifying how many",
+      "Scenarios provide raw bus data; LLM must determine violation classification independently",
+      "Feeder parameters generalized from real utility cases"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "grid_edge_control_L2_001",
+      "category": "Grid-Edge Control",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "Given the feeder topology and bus voltage readings below (taken at solar noon on a clear summer day), identify which buses have voltage violations, classify each violation type (overvoltage or undervoltage per ANSI C84.1 Range A), and explain the most likely cause of the violations based on the DER penetration data.",
+      "context": {
+        "feeder": "Modified IEEE 13-bus test feeder, 4.16 kV nominal",
+        "pv_installations": [
+          {
+            "bus": "634",
+            "capacity_kw": 800,
+            "current_output_kw": 760,
+            "inverter_mode": "unity_power_factor"
+          },
+          {
+            "bus": "675",
+            "capacity_kw": 1200,
+            "current_output_kw": 1140,
+            "inverter_mode": "unity_power_factor"
+          },
+          {
+            "bus": "611",
+            "capacity_kw": 400,
+            "current_output_kw": 380,
+            "inverter_mode": "unity_power_factor"
+          }
+        ],
+        "load_at_measurement_time": {
+          "total_feeder_load_kw": 1800,
+          "total_feeder_load_kvar": 600,
+          "note": "Light summer midday load; many commercial loads at partial capacity"
+        },
+        "bus_voltages_pu": {
+          "650": 1.025,
+          "632": 1.038,
+          "633": 1.042,
+          "634": 1.061,
+          "645": 1.035,
+          "646": 1.033,
+          "671": 1.048,
+          "680": 1.046,
+          "675": 1.072,
+          "684": 1.044,
+          "611": 1.053,
+          "652": 1.04,
+          "692": 1.049
+        },
+        "substation_ltc_setpoint_pu": 1.025,
+        "regulator_position": "substation only"
+      },
+      "tools": [],
+      "ground_truth": "Bus 675 at 1.072 p.u. exceeds the ANSI C84.1 Range A upper limit of 1.05 p.u. (service voltage), constituting an overvoltage violation. Bus 634 at 1.061 p.u. also exceeds 1.05 p.u. and is in violation. The primary cause is reverse power flow from high PV penetration during light load conditions. The total PV output (2280 kW) significantly exceeds the feeder load (1800 kW), causing 480 kW of reverse power flow through the feeder impedance, which raises voltage at PV-connected buses. Bus 675 has the worst violation because it has the largest PV installation (1200 kW) and is electrically distant from the substation. All inverters are operating at unity power factor, providing no reactive power support to mitigate voltage rise. Enabling volt-var mode on the inverters would absorb reactive power at high-voltage buses and help bring voltages within limits.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "grid_edge_control_L2_002",
+      "category": "Grid-Edge Control",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "The utility is considering enabling volt-var control on the inverters at buses 634 and 675. Using the provided volt-var curve parameters and the inverter ratings, estimate the approximate reactive power absorption at each inverter given the current bus voltages, and assess whether volt-var alone is likely sufficient to resolve the voltage violations without active power curtailment.",
+      "context": {
+        "current_bus_voltages_pu": {
+          "634": 1.061,
+          "675": 1.072
+        },
+        "inverter_634": {
+          "rated_kva": 900,
+          "current_active_output_kw": 760,
+          "max_available_reactive_kvar": "sqrt(900^2 - 760^2) = approximately 483 kvar"
+        },
+        "inverter_675": {
+          "rated_kva": 1400,
+          "current_active_output_kw": 1140,
+          "max_available_reactive_kvar": "sqrt(1400^2 - 1140^2) = approximately 814 kvar"
+        },
+        "volt_var_curve": {
+          "v1": 1.0,
+          "q1_pct": 44,
+          "v2": 1.03,
+          "q2_pct": 0,
+          "v3": 1.05,
+          "q3_pct": 0,
+          "v4": 1.08,
+          "q4_pct": -44,
+          "note": "Positive Q = inject vars (capacitive), Negative Q = absorb vars (inductive). Linear interpolation between points. Q percentage is of rated kVA."
+        },
+        "feeder_approximate_sensitivity": {
+          "delta_v_per_100kvar_absorbed_bus634": -0.004,
+          "delta_v_per_100kvar_absorbed_bus675": -0.005,
+          "note": "Approximate voltage change in p.u. per 100 kvar of reactive power absorption at each bus, based on feeder impedance characteristics"
+        }
+      },
+      "tools": [],
+      "ground_truth": "For bus 634 at 1.061 p.u.: The voltage is between V3 (1.05) and V4 (1.08). By linear interpolation, Q = -44% * (1.061 - 1.05) / (1.08 - 1.05) = -44% * 0.367 = -16.1% of rated kVA. So Q_634 = -0.161 * 900 = approximately -145 kvar (absorbing). Voltage reduction at bus 634: 145/100 * 0.004 = 0.0058 p.u. New voltage estimate: 1.061 - 0.006 = ~1.055 p.u. This is still slightly above 1.05 p.u. but much improved.\n\nFor bus 675 at 1.072 p.u.: Q = -44% * (1.072 - 1.05) / (1.08 - 1.05) = -44% * 0.733 = -32.3% of rated kVA. So Q_675 = -0.323 * 1400 = approximately -452 kvar (absorbing). Voltage reduction at bus 675: 452/100 * 0.005 = 0.0226 p.u. New voltage estimate: 1.072 - 0.023 = ~1.049 p.u. This brings bus 675 just within the 1.05 p.u. limit.\n\nAssessment: Volt-var control alone is likely sufficient to resolve the violation at bus 675 (bringing it to ~1.049 p.u.) and nearly resolves bus 634 (to ~1.055 p.u.). Bus 634 may still be marginally above the limit, in which case a small amount of volt-watt curtailment or a modest reduction in the substation LTC setpoint (from 1.025 to 1.02 p.u.) would provide the remaining margin. Active power curtailment is not strictly necessary if the LTC setpoint can be adjusted.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "grid_edge_control_L2_003",
+      "category": "Grid-Edge Control",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "A residential feeder with battery energy storage systems (BESS) experiences a late-afternoon load peak. The utility wants to use the BESS units for peak shaving while maintaining voltage within ANSI C84.1 Range A limits. Given the feeder conditions below, recommend a dispatch strategy for the three BESS units and identify any potential voltage concerns during the discharge period.",
+      "context": {
+        "feeder": "12.47 kV radial feeder, 8.2 km total length",
+        "time": "17:30 local, summer evening, PV output declining",
+        "bus_data": [
+          {
+            "bus": "B2",
+            "distance_from_sub_km": 2.1,
+            "load_kw": 450,
+            "load_kvar": 150,
+            "pv_kw": 80,
+            "voltage_pu": 0.978
+          },
+          {
+            "bus": "B5",
+            "distance_from_sub_km": 4.8,
+            "load_kw": 620,
+            "load_kvar": 210,
+            "pv_kw": 30,
+            "voltage_pu": 0.961
+          },
+          {
+            "bus": "B8",
+            "distance_from_sub_km": 7.9,
+            "load_kw": 380,
+            "load_kvar": 130,
+            "pv_kw": 10,
+            "voltage_pu": 0.942
+          }
+        ],
+        "bess_units": [
+          {
+            "bus": "B2",
+            "rated_kw": 250,
+            "rated_kwh": 500,
+            "soc_pct": 85,
+            "inverter_kva": 280
+          },
+          {
+            "bus": "B5",
+            "rated_kw": 200,
+            "rated_kwh": 400,
+            "soc_pct": 72,
+            "inverter_kva": 225
+          },
+          {
+            "bus": "B8",
+            "rated_kw": 150,
+            "rated_kwh": 300,
+            "soc_pct": 90,
+            "inverter_kva": 170
+          }
+        ],
+        "substation_transformer_capacity_kva": 3000,
+        "current_substation_loading_pct": 88,
+        "feeder_peak_expected_kw": 1900,
+        "feeder_impedance_note": "R/X ratio approximately 2.5 (typical for secondary/LV distribution), voltage drop dominated by active power flow"
+      },
+      "tools": [],
+      "ground_truth": "Recommended dispatch strategy:\n\n1. Prioritize discharge at bus B8 (end-of-feeder) at full rated power (150 kW). B8 has the lowest voltage (0.942 p.u., only 0.025 p.u. above the ANSI C84.1 Range A lower limit of 0.917 p.u.). Discharging the BESS here reduces net load at the feeder end, which reduces current flow through the entire feeder length, providing the greatest voltage support benefit per kW discharged due to the long electrical distance from the substation. With an R/X ratio of 2.5, voltage is highly sensitive to active power injection.\n\n2. Discharge BESS at B5 at full rated power (200 kW). B5 is the highest-load bus and at 0.961 p.u., still has reasonable headroom but benefits from local generation to offset the 620 kW load.\n\n3. Discharge BESS at B2 at partial power (~200 kW of 250 kW rated). B2 has the healthiest voltage and is closest to the substation, so discharge here has the least voltage support value. Reserve some capacity for potential further peak later in the evening.\n\nTotal BESS discharge: 550 kW. This reduces the substation loading from ~88% (approximately 2640 kW of 3000 kVA) to approximately 70% and shaves the expected 1900 kW peak to roughly 1350 kW.\n\nVoltage concerns: The primary concern is bus B8. Even with 150 kW BESS discharge, if PV output drops to zero after sunset (removing the remaining 10 kW) and evening load increases further, B8 voltage could approach the 0.917 p.u. lower limit. The BESS at B8 should also inject reactive power (up to sqrt(170^2 - 150^2) = ~81 kvar) to provide additional voltage support. Additionally, at the high R/X ratio, the voltage benefit of reactive power injection is reduced compared to active power, so the active power discharge is the primary voltage support mechanism.\n\nDuration check: At 150 kW discharge, the B8 BESS (300 kWh at 90% SOC = 270 kWh available) can sustain discharge for ~1.8 hours, covering the 17:30-19:30 peak window.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "rubric"
+    }
+  ]
+}

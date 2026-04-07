@@ -1,0 +1,333 @@
+{
+  "metadata": {
+    "category": "Cybersecurity",
+    "tier": "L2",
+    "source_platforms": [
+      {
+        "name": "CISA ICS Advisories",
+        "url": "https://www.cisa.gov/news-events/ics-advisories",
+        "type": "vulnerability_database"
+      },
+      {
+        "name": "SIABench (task structure reference)",
+        "url": "https://github.com/llmslayer/SIABench",
+        "type": "benchmark_reference"
+      },
+      {
+        "name": "MSU/ORNL Power System Attack Datasets",
+        "url": "https://sites.google.com/a/uah.edu/tommy-morris-uah/ics-data-sets",
+        "type": "attack_dataset"
+      },
+      {
+        "name": "SunSpec Alliance Threat Models",
+        "url": "https://sunspec.org/",
+        "type": "threat_model"
+      },
+      {
+        "name": "Liu, Ning & Reiter 2011",
+        "url": "https://doi.org/10.1145/2046707.2046721",
+        "type": "foundational_paper"
+      }
+    ],
+    "ground_truth_references": [
+      "Inverter volt-var curve defines expected Q for given V; deviations indicate anomaly",
+      "Real CISA advisories document SMA/SolarEdge inverter CVEs for attack surface analysis",
+      "FDI attack: measurements at electrically adjacent buses modified by consistent amount preserves residuals"
+    ],
+    "de_biasing_applied": [
+      "Telemetry log requires pattern recognition across 20 data points, not memorization",
+      "Attack surface analysis uses realistic but generalized architecture description",
+      "FDI scenario requires understanding measurement Jacobian consistency, not recalling paper results"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "cybersecurity_L2_001",
+      "category": "Cybersecurity",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "safety_robustness"
+      ],
+      "prompt": "Examine the inverter telemetry log below. Identify the anomalous readings, classify the likely attack type, and recommend immediate response actions for the utility operations team.",
+      "context": {
+        "inverter_id": "INV-2047",
+        "rated_capacity_kw": 250,
+        "volt_var_settings": {
+          "mode": "IEEE 1547 Category B",
+          "v1": 0.92,
+          "q1_pct": 44,
+          "v2": 0.98,
+          "q2_pct": 0,
+          "v3": 1.02,
+          "q3_pct": 0,
+          "v4": 1.08,
+          "q4_pct": -44,
+          "note": "Reactive power should be 0 when voltage is between 0.98 and 1.02 pu, absorbing (negative Q) above 1.02 pu, injecting (positive Q) below 0.98 pu. Max reactive power = 110 kVAR (44% of 250 kVA)."
+        },
+        "telemetry_log": [
+          {
+            "row": 1,
+            "timestamp": "2024-08-12T14:00:00",
+            "P_kw": 218.5,
+            "Q_kvar": 2.1,
+            "V_pu": 1.005,
+            "f_hz": 60.01
+          },
+          {
+            "row": 2,
+            "timestamp": "2024-08-12T14:05:00",
+            "P_kw": 215.2,
+            "Q_kvar": 1.8,
+            "V_pu": 1.003,
+            "f_hz": 60.0
+          },
+          {
+            "row": 3,
+            "timestamp": "2024-08-12T14:10:00",
+            "P_kw": 220.1,
+            "Q_kvar": 0.5,
+            "V_pu": 1.007,
+            "f_hz": 60.01
+          },
+          {
+            "row": 4,
+            "timestamp": "2024-08-12T14:15:00",
+            "P_kw": 217.8,
+            "Q_kvar": 1.3,
+            "V_pu": 1.004,
+            "f_hz": 60.0
+          },
+          {
+            "row": 5,
+            "timestamp": "2024-08-12T14:20:00",
+            "P_kw": 219.3,
+            "Q_kvar": -85.2,
+            "V_pu": 1.006,
+            "f_hz": 60.01
+          },
+          {
+            "row": 6,
+            "timestamp": "2024-08-12T14:25:00",
+            "P_kw": 216.7,
+            "Q_kvar": 1.9,
+            "V_pu": 1.003,
+            "f_hz": 60.0
+          },
+          {
+            "row": 7,
+            "timestamp": "2024-08-12T14:30:00",
+            "P_kw": 221.0,
+            "Q_kvar": 0.8,
+            "V_pu": 1.008,
+            "f_hz": 60.02
+          },
+          {
+            "row": 8,
+            "timestamp": "2024-08-12T14:35:00",
+            "P_kw": 218.9,
+            "Q_kvar": 1.5,
+            "V_pu": 1.005,
+            "f_hz": 60.01
+          },
+          {
+            "row": 9,
+            "timestamp": "2024-08-12T14:40:00",
+            "P_kw": 214.6,
+            "Q_kvar": 92.7,
+            "V_pu": 1.001,
+            "f_hz": 59.99
+          },
+          {
+            "row": 10,
+            "timestamp": "2024-08-12T14:45:00",
+            "P_kw": 220.4,
+            "Q_kvar": 2.3,
+            "V_pu": 1.007,
+            "f_hz": 60.01
+          },
+          {
+            "row": 11,
+            "timestamp": "2024-08-12T14:50:00",
+            "P_kw": 217.1,
+            "Q_kvar": 0.6,
+            "V_pu": 1.004,
+            "f_hz": 60.0
+          },
+          {
+            "row": 12,
+            "timestamp": "2024-08-12T14:55:00",
+            "P_kw": 219.8,
+            "Q_kvar": 1.1,
+            "V_pu": 1.006,
+            "f_hz": 60.01
+          },
+          {
+            "row": 13,
+            "timestamp": "2024-08-12T15:00:00",
+            "P_kw": 210.3,
+            "Q_kvar": -105.4,
+            "V_pu": 1.002,
+            "f_hz": 60.0
+          },
+          {
+            "row": 14,
+            "timestamp": "2024-08-12T15:05:00",
+            "P_kw": 216.5,
+            "Q_kvar": 2.0,
+            "V_pu": 1.005,
+            "f_hz": 60.01
+          },
+          {
+            "row": 15,
+            "timestamp": "2024-08-12T15:10:00",
+            "P_kw": 218.2,
+            "Q_kvar": 0.9,
+            "V_pu": 1.003,
+            "f_hz": 60.0
+          },
+          {
+            "row": 16,
+            "timestamp": "2024-08-12T15:15:00",
+            "P_kw": 221.5,
+            "Q_kvar": 1.7,
+            "V_pu": 1.008,
+            "f_hz": 60.02
+          },
+          {
+            "row": 17,
+            "timestamp": "2024-08-12T15:20:00",
+            "P_kw": 219.0,
+            "Q_kvar": 0.4,
+            "V_pu": 1.006,
+            "f_hz": 60.01
+          },
+          {
+            "row": 18,
+            "timestamp": "2024-08-12T15:25:00",
+            "P_kw": 215.8,
+            "Q_kvar": 1.6,
+            "V_pu": 1.002,
+            "f_hz": 60.0
+          },
+          {
+            "row": 19,
+            "timestamp": "2024-08-12T15:30:00",
+            "P_kw": 220.7,
+            "Q_kvar": 2.4,
+            "V_pu": 1.007,
+            "f_hz": 60.01
+          },
+          {
+            "row": 20,
+            "timestamp": "2024-08-12T15:35:00",
+            "P_kw": 217.3,
+            "Q_kvar": 1.2,
+            "V_pu": 1.004,
+            "f_hz": 60.0
+          }
+        ]
+      },
+      "tools": [],
+      "ground_truth": "Anomalous readings: Rows 5, 9, and 13. Analysis: (1) Row 5 (14:20): Q = -85.2 kVAR (absorbing) while V = 1.006 pu. Per the volt-var curve, voltage between 0.98 and 1.02 pu should produce Q = 0. Absorbing 85.2 kVAR would only be appropriate if voltage exceeded ~1.06 pu (interpolating the volt-var curve). (2) Row 9 (14:40): Q = +92.7 kVAR (injecting) while V = 1.001 pu. Voltage is in the deadband (0.98-1.02 pu), so Q should be ~0. Injecting 92.7 kVAR would only be appropriate if voltage dropped below ~0.94 pu. (3) Row 13 (15:00): Q = -105.4 kVAR (absorbing) while V = 1.002 pu, again in the deadband. This is near the inverter's maximum reactive capability (110 kVAR) and completely inconsistent with the voltage reading. The pattern — sporadic, large reactive power excursions that are inconsistent with the voltage-dependent volt-var control law — is characteristic of a command injection attack or man-in-the-middle attack on the inverter's Modbus/SunSpec control interface. The attacker is injecting false reactive power setpoint commands, likely targeting the volt-var override registers. The intermittent nature (every 15-20 minutes) suggests automated probing or testing before a larger coordinated attack. Active power and frequency readings remain normal, indicating the attack specifically targets the reactive power control channel. Immediate response actions: (1) Switch the inverter to local autonomous control mode, disabling remote setpoint commands. (2) Isolate the communication path — disable the Modbus TCP port and investigate the gateway firewall logs for unauthorized connections. (3) Verify physical voltage at the point of interconnection with a portable power quality meter to confirm telemetry voltage readings are genuine. (4) Audit all recent Modbus write commands (function code 0x06/0x10) to the reactive power registers. (5) Alert the DER aggregator/DERMS operator and initiate the CIP-008 incident response procedure. (6) Check other inverters on the same communication network for similar anomalies.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "cybersecurity_L2_002",
+      "category": "Cybersecurity",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "safety_robustness"
+      ],
+      "prompt": "Given the DER aggregator network architecture described below, identify the three most critical attack surfaces, rank them by risk level (considering likelihood and impact), and propose specific mitigations for each.",
+      "context": {
+        "architecture_description": "A DER aggregator manages 5 commercial-scale inverters (100 kW each, 500 kW total) at a single site. The architecture consists of: (1) DERMS Cloud Platform — hosted on AWS, runs optimization and dispatch algorithms, communicates with the site via HTTPS REST API over the public internet. (2) Site Gateway — a Linux-based edge computing device (Raspberry Pi 4 with Ubuntu) located in an unlocked electrical room, running a Python-based DERMS agent that receives dispatch commands from the cloud and translates them to Modbus TCP commands. The gateway has WiFi connectivity to the building's corporate network and a wired Ethernet connection to the inverter Modbus network. (3) Modbus TCP Network — a flat (unsegmented) Ethernet LAN connecting the gateway to all 5 inverters on port 502. No Modbus authentication or encryption. (4) Inverters — SMA Sunny Tripower 100 kW units with SunSpec Modbus interface, firmware version 3.2.1 (2 years old), web-based configuration portal accessible on the Modbus LAN with default admin credentials. (5) Remote access — the site owner has TeamViewer installed on the gateway for remote troubleshooting, using a 6-digit numeric access code.",
+        "additional_context": {
+          "internet_connection": "Comcast business cable, dynamic IP, no static firewall rules beyond ISP default NAT",
+          "monitoring": "No intrusion detection system. Gateway logs are stored locally with 7-day rotation. No centralized SIEM.",
+          "physical_security": "Electrical room has a standard door lock, no camera, no access logging"
+        }
+      },
+      "tools": [],
+      "ground_truth": "Three most critical attack surfaces ranked by risk: (1) HIGHEST RISK — Site Gateway (Raspberry Pi): This is the convergence point between IT and OT networks, and it has multiple severe vulnerabilities. Attack vectors: (a) TeamViewer with a 6-digit numeric code provides only 10^6 = 1 million combinations, trivially brute-forceable; TeamViewer has had multiple CVEs allowing remote code execution. (b) The gateway bridges the corporate WiFi network to the Modbus OT network with no network segmentation — compromising the gateway gives direct access to all inverters. (c) Running a full Ubuntu desktop OS on a Raspberry Pi means a large attack surface (many unnecessary services/packages). (d) The unlocked electrical room allows physical access to the device (USB boot attack, SD card cloning). Impact: Full control of all 5 inverters (500 kW), ability to inject arbitrary Modbus commands, exfiltrate data, establish persistent backdoor. Mitigations: Remove TeamViewer immediately, replace with VPN-based remote access (WireGuard or IPsec) with certificate-based authentication and MFA. Harden the OS (disable unnecessary services, enable automatic security updates, install host-based firewall). Implement network segmentation — use separate physical NICs and firewall rules so the corporate WiFi cannot reach the Modbus network. Lock the electrical room and add access logging. (2) HIGH RISK — Modbus TCP Network (flat, unauthenticated): Attack vector: Any device on the flat LAN can send Modbus TCP commands to any inverter on port 502 — there is no authentication, encryption, or access control in standard Modbus TCP. An attacker who gains gateway access (or connects a device to the LAN) can send arbitrary register writes to all inverters simultaneously. Impact: Can command inverters to trip offline (500 kW sudden loss), inject reactive power to cause voltage violations, or modify protection settings. Mitigations: Deploy a Modbus-aware firewall/IDS (e.g., Claroty, Nozomi Networks, or open-source Snort with Modbus preprocessor) between the gateway and inverter network. Implement allowlisting — only permit Modbus commands from the gateway's MAC/IP, and only for specific function codes and register ranges. Consider upgrading to IEEE 2030.5 or SunSpec with TLS for authenticated, encrypted DER communications. (3) MEDIUM-HIGH RISK — Inverter web portals with default credentials: Attack vector: The SMA inverter web configuration portals are accessible on the Modbus LAN with default admin/admin credentials. An attacker on the LAN can log in, change inverter firmware, modify grid-code protection settings (over/under voltage and frequency trip points), disable anti-islanding protection, or install malicious firmware. The firmware is 2 years old, likely missing security patches. Impact: Persistent compromise — modified firmware survives reboots and Modbus command changes. Could disable safety protections, creating physical safety hazards (anti-islanding failure during a grid outage endangers line workers). Mitigations: Immediately change all default passwords to unique, strong credentials. Apply firmware updates from SMA to the latest version. Disable the web portal on the production network if not needed, or restrict access via VLAN to a management-only network segment. Implement firmware integrity verification (signed firmware only). Honorable mention — DERMS Cloud Platform (HTTPS REST API) is lower risk due to AWS-managed security, but should still have API authentication hardened (OAuth2 + API key rotation), rate limiting, and input validation to prevent command injection.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "cybersecurity_L2_003",
+      "category": "Cybersecurity",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "safety_robustness"
+      ],
+      "prompt": "Examine the before-and-after SCADA voltage measurements from a suspected false data injection attack on the IEEE 13-bus test feeder. Determine which measurements are likely compromised, explain the attack vector, and describe why the Chi-squared bad data detection test fails to detect this attack.",
+      "context": {
+        "feeder": "IEEE 13-bus test feeder, balanced single-phase equivalent, nominal voltage 4.16 kV (line-to-line), 2.4 kV (line-to-neutral)",
+        "monitored_buses": [
+          "Bus 632",
+          "Bus 633",
+          "Bus 634",
+          "Bus 671",
+          "Bus 675",
+          "Bus 680"
+        ],
+        "measurement_type": "Voltage magnitude in per-unit (base = 2.4 kV L-N)",
+        "before_attack_measurements": {
+          "Bus_632": 1.021,
+          "Bus_633": 1.018,
+          "Bus_634": 1.012,
+          "Bus_671": 0.99,
+          "Bus_675": 0.985,
+          "Bus_680": 0.978
+        },
+        "after_attack_measurements": {
+          "Bus_632": 1.021,
+          "Bus_633": 1.018,
+          "Bus_634": 1.012,
+          "Bus_671": 1.005,
+          "Bus_675": 0.985,
+          "Bus_680": 0.993
+        },
+        "state_estimation_results": {
+          "before_attack": {
+            "J_x_weighted_residual": 3.42,
+            "chi_squared_threshold_95pct": 11.07,
+            "degrees_of_freedom": 5,
+            "bad_data_detected": false
+          },
+          "after_attack": {
+            "J_x_weighted_residual": 3.58,
+            "chi_squared_threshold_95pct": 11.07,
+            "degrees_of_freedom": 5,
+            "bad_data_detected": false
+          }
+        },
+        "network_notes": "Bus 671 and Bus 680 are electrically close (connected via a short line segment with impedance Z = 0.001 + j0.002 pu). Bus 675 is on a lateral off Bus 671. The Jacobian matrix H relates voltage measurements to state variables.",
+        "actual_true_voltages_post_attack": {
+          "Bus_671": 0.99,
+          "Bus_680": 0.978,
+          "note": "The true voltages have not changed; only the measurements have been altered."
+        }
+      },
+      "tools": [],
+      "ground_truth": "Compromised measurements: Bus 671 (changed from 0.990 to 1.005, a +0.015 pu injection) and Bus 680 (changed from 0.978 to 0.993, a +0.015 pu injection). Bus 675 is unchanged. Analysis: The attacker modified exactly two voltage measurements — both at electrically close buses (671 and 680) — by the same magnitude (+0.015 pu). This is consistent with a structured FDI attack where the attack vector a = Hc for some state perturbation vector c. Because Bus 671 and Bus 680 are connected by a short, low-impedance line, a consistent voltage increase at both buses is physically plausible — it matches what would occur if the actual voltage state at both buses were higher. The state estimator, receiving the corrupted measurements, estimates a new (false) state where V_671 = 1.005 pu and V_680 = 0.993 pu. The measurement residuals remain small because the corrupted measurements are internally consistent with each other and with the network model: the voltage drop from 671 to 680 is 1.005 - 0.993 = 0.012 pu, which is close to the true drop of 0.990 - 0.978 = 0.012 pu — the attacker preserved the voltage difference across the line segment. Why Chi-squared detection fails: The weighted residual J(x) only increased from 3.42 to 3.58 (well below the 11.07 threshold), because the attack vector lies in the column space of H. The corrupted measurements are consistent with a valid (but false) system state, so the residuals z_a - h(x_a) are nearly identical to the pre-attack residuals z - h(x). The attack succeeded because: (1) the attacker had knowledge of the network topology (H matrix), (2) the attack modified measurements at electrically coupled buses by consistent amounts, and (3) the number of compromised measurements (2) was sufficient to construct a valid attack vector c with at least one degree of freedom. Detection approaches: (1) compare voltage telemetry against independent PMU measurements at Bus 671 or 680; (2) check temporal consistency — a 0.015 pu step change at two buses with no corresponding change in load or generation is suspicious; (3) deploy a machine learning-based detector trained on temporal patterns that captures the abrupt, correlated jump.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "rubric"
+    }
+  ]
+}

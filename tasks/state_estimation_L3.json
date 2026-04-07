@@ -1,0 +1,114 @@
+{
+  "metadata": {
+    "category": "Distribution State Estimation",
+    "tier": "L3",
+    "source_platforms": [
+      {
+        "name": "IEEE 33-Bus (pandapower.networks.case33bw)",
+        "url": "https://www.pandapower.org/",
+        "type": "test_feeder"
+      },
+      {
+        "name": "pandapower.estimation module",
+        "url": "https://pandapower.readthedocs.io/en/latest/estimation.html",
+        "type": "simulation_tool",
+        "writeup": "pandapower state estimation tutorial notebook"
+      },
+      {
+        "name": "Liu, Ning & Reiter 2011",
+        "url": "https://doi.org/10.1145/2046707.2046721",
+        "type": "research_paper",
+        "writeup": "Foundational FDI attack paper with mathematical proof of undetectability"
+      }
+    ],
+    "ground_truth_references": [
+      "pandapower SE tutorial provides WLS implementation reference",
+      "Power flow solution serves as true state for SE validation",
+      "Liu et al. 2011 proves a=Hc attack vector bypasses chi-squared detection"
+    ],
+    "de_biasing_applied": [
+      "Code execution tasks verified by numerical output",
+      "Bad data injection at specific bus tests detection pipeline, not recall"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "state_estimation_L3_001",
+      "category": "Distribution State Estimation",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "execution_tool_use"
+      ],
+      "prompt": "Using pandapower, perform a complete state estimation experiment on the IEEE 33-bus distribution network.\n\nStep 1: Load the IEEE 33-bus network using pandapower.networks.case33bw().\nStep 2: Run a full Newton-Raphson power flow to obtain the ground-truth bus voltages and power injections.\nStep 3: Create synthetic measurements from the ground-truth results by adding Gaussian noise:\n  - Voltage magnitude measurements at all buses: sigma_v = 0.01 p.u.\n  - Active power injection measurements at all buses: sigma_p = 0.02 p.u. (on the system MVA base)\n  - Reactive power injection measurements at all buses: sigma_q = 0.02 p.u.\nStep 4: Add these noisy measurements to the pandapower network using pandapower.estimation.create_measurement() for each bus.\nStep 5: Run WLS state estimation using pandapower.estimation.estimate().\nStep 6: Compare the estimated voltage magnitudes against the ground-truth power flow voltages. Report:\n  (a) The maximum absolute voltage estimation error across all buses (in p.u.).\n  (b) The mean absolute voltage estimation error across all buses.\n  (c) The bus number where the maximum error occurs.\n  (d) A summary table of estimated vs. true voltages for the first 10 buses.\n\nSuccess criterion: The maximum absolute voltage estimation error should be less than 0.02 p.u.",
+      "context": {
+        "network": "IEEE 33-bus (pandapower.networks.case33bw)",
+        "powerflow_method": "Newton-Raphson",
+        "noise_parameters": {
+          "sigma_v_pu": 0.01,
+          "sigma_p_pu": 0.02,
+          "sigma_q_pu": 0.02
+        },
+        "estimation_method": "WLS via pandapower.estimation.estimate()",
+        "success_threshold": "max absolute voltage error < 0.02 p.u.",
+        "expected_output": "Numerical results including max error, mean error, worst-case bus, and comparison table"
+      },
+      "tools": [
+        "run_powerflow",
+        "execute_python"
+      ],
+      "ground_truth": "The agent should produce a working Python script that: (1) loads the 33-bus network, (2) runs power flow (typical bus voltages range from ~0.904 to 1.0 p.u.), (3) creates noisy voltage measurements (33 measurements with sigma=0.01) and power injection measurements (33 P and 33 Q measurements with sigma=0.02) using pandapower.estimation.create_measurement(), (4) runs pandapower.estimation.estimate() successfully (convergence expected within 5-10 iterations), and (5) reports the max absolute voltage error < 0.02 p.u. With 99 total measurements for 65 state variables, the system is well over-determined and WLS should produce accurate estimates. Typical results: max error ~0.005-0.015 p.u., mean error ~0.002-0.005 p.u., depending on the random noise realization.",
+      "metrics": [
+        "execution_success",
+        "numerical_accuracy",
+        "code_quality"
+      ],
+      "scoring": "execution_based"
+    },
+    {
+      "task_id": "state_estimation_L3_002",
+      "category": "Distribution State Estimation",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "execution_tool_use"
+      ],
+      "prompt": "Using pandapower, perform a bad data detection experiment on the IEEE 33-bus distribution network.\n\nStep 1: Load the IEEE 33-bus network using pandapower.networks.case33bw().\nStep 2: Run a Newton-Raphson power flow to obtain ground-truth voltages.\nStep 3: Create synthetic measurements with Gaussian noise (sigma_v = 0.005 p.u., sigma_p = 0.01 p.u., sigma_q = 0.01 p.u.) at all buses.\nStep 4: Inject a bad data point: multiply the voltage measurement at bus 12 by 1.12 (i.e., increase the measured voltage by 12%, simulating a gross meter error). For example, if the true voltage at bus 12 is 0.965 p.u., the corrupted measurement would be approximately 1.081 p.u.\nStep 5: Run WLS state estimation with Chi-squared bad data detection enabled (use the chi2_analysis parameter or equivalent in pandapower.estimation).\nStep 6: Report whether the Chi-squared test detects the presence of bad data.\nStep 7: Implement or use the normalized residual test to identify which specific measurement is the corrupted one. Compute the normalized residual for each voltage measurement and identify the measurement with the largest normalized residual.\nStep 8: Report:\n  (a) Whether the Chi-squared test flagged bad data (True/False).\n  (b) The measurement identified as bad data by the normalized residual test (should be the voltage measurement at bus 12).\n  (c) The normalized residual value for the bad measurement vs. the threshold (typically 3.0).\n  (d) The normalized residuals for the 5 measurements with the highest values, for comparison.\n\nSuccess criterion: The bad data detection pipeline correctly identifies bus 12's voltage measurement as the corrupted data point.",
+      "context": {
+        "network": "IEEE 33-bus (pandapower.networks.case33bw)",
+        "noise_parameters": {
+          "sigma_v_pu": 0.005,
+          "sigma_p_pu": 0.01,
+          "sigma_q_pu": 0.01
+        },
+        "bad_data_injection": {
+          "target_bus": 12,
+          "measurement_type": "voltage magnitude",
+          "corruption_factor": 1.12,
+          "description": "Multiply true voltage at bus 12 by 1.12 to simulate gross meter error"
+        },
+        "detection_methods": [
+          "Chi-squared test",
+          "Largest Normalized Residual test"
+        ],
+        "normalized_residual_threshold": 3.0,
+        "success_criterion": "Correctly identify bus 12 voltage measurement as corrupted"
+      },
+      "tools": [
+        "run_powerflow",
+        "execute_python"
+      ],
+      "ground_truth": "The agent should produce a working Python script that: (1) loads the network and runs power flow, (2) creates noisy measurements with tighter noise (sigma_v=0.005, sigma_p/q=0.01) to make bad data stand out clearly, (3) corrupts the bus 12 voltage measurement by multiplying by 1.12 (creating a ~0.11-0.12 p.u. error, which is ~22-24 standard deviations from the true value), (4) runs state estimation with chi2_analysis enabled \u2014 the Chi-squared test should flag bad data (True) because the corrupted measurement dramatically inflates the weighted residual sum, (5) computes normalized residuals for all measurements and identifies bus 12's voltage as having the largest normalized residual (expected value >> 3.0, likely in the range of 15-25), and (6) the next-highest normalized residuals should be much smaller (typically < 3.0), confirming clean identification. The pandapower.estimation module provides chi2_analysis and remove_bad_data options that can be leveraged. If direct normalized residual access is not available via the API, the agent should compute them manually from the residual vector and the measurement covariance matrix.",
+      "metrics": [
+        "execution_success",
+        "detection_accuracy",
+        "code_quality"
+      ],
+      "scoring": "execution_based"
+    }
+  ]
+}

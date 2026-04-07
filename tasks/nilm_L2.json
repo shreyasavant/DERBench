@@ -1,0 +1,238 @@
+{
+  "metadata": {
+    "category": "NILM",
+    "tier": "L2",
+    "source_platforms": [
+      {
+        "name": "REDD Dataset (House 1)",
+        "url": "https://www.kaggle.com/datasets/pawelkauf/redd-part",
+        "type": "open_dataset"
+      },
+      {
+        "name": "NILMTK Benchmarks",
+        "url": "https://github.com/nilmtk/nilmtk",
+        "type": "toolkit",
+        "writeup": "Batra et al. published CO and FHMM baseline results on REDD"
+      },
+      {
+        "name": "Kelly & Knottenbelt 2015 - Neural NILM",
+        "url": "https://doi.org/10.1145/2821650.2821672",
+        "type": "research_paper",
+        "writeup": "Published F1/MAE for DNN architectures on UK-DALE"
+      }
+    ],
+    "ground_truth_references": [
+      "Manual disaggregation from hourly data uses known appliance signatures as constraints",
+      "NILMTK published CO vs FHMM results on REDD House 1 for comparison",
+      "Metric computation formulas per NILMTK standardized definitions"
+    ],
+    "de_biasing_applied": [
+      "Hourly disaggregation requires reasoning about power magnitudes and temporal patterns",
+      "Metric computation task requires applying formulas to data, not recalling results",
+      "Algorithm comparison requires technical explanation of why each method excels or struggles"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "nilm_L2_001",
+      "category": "NILM",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "A household's aggregate power consumption is recorded at hourly intervals over 24 hours. The known appliances and their power signatures are:\n- Refrigerator: 150 W (cycles on 35 min, off 25 min, so average ~88 W per hour)\n- EV charger (L2): 7,200 W when active\n- Heat pump: 3,500 W when active\n- Oven: 2,400 W when active\n- Base load (electronics, lights, standby): ~200 W constant\n\nAggregate power readings (W):\nHour 0: 350 | Hour 1: 340 | Hour 2: 340 | Hour 3: 7,550 | Hour 4: 7,540 | Hour 5: 7,550 | Hour 6: 350 | Hour 7: 3,850 | Hour 8: 3,850 | Hour 9: 350 | Hour 10: 2,750 | Hour 11: 2,740 | Hour 12: 350 | Hour 13: 350 | Hour 14: 3,850 | Hour 15: 3,850 | Hour 16: 3,850 | Hour 17: 6,250 | Hour 18: 6,240 | Hour 19: 3,850 | Hour 20: 350 | Hour 21: 7,550 | Hour 22: 7,540 | Hour 23: 350\n\nFor each hour, identify which appliances are likely active. Explain your reasoning for each period, noting any ambiguities.",
+      "context": {
+        "appliance_signatures": {
+          "refrigerator_avg_W": 88,
+          "ev_charger_W": 7200,
+          "heat_pump_W": 3500,
+          "oven_W": 2400,
+          "base_load_W": 200
+        },
+        "aggregate_W": [
+          350,
+          340,
+          340,
+          7550,
+          7540,
+          7550,
+          350,
+          3850,
+          3850,
+          350,
+          2750,
+          2740,
+          350,
+          350,
+          3850,
+          3850,
+          3850,
+          6250,
+          6240,
+          3850,
+          350,
+          7550,
+          7540,
+          350
+        ]
+      },
+      "tools": [],
+      "ground_truth": "Hours 0-2 (350 W): Base load (~200W) + refrigerator average (~88W) + misc = ~288W. The ~350W reading is consistent with base load + refrigerator + some additional standby. Active: refrigerator, base load. Hours 3-5 (~7550 W): 7550 - 200 (base) - 88 (fridge) = ~7262 W. This closely matches the EV charger at 7200 W. Active: EV charger + refrigerator + base load. Timing (3-5 AM) is consistent with overnight EV charging. Hour 6 (350 W): Back to baseline. Active: refrigerator + base load. Hours 7-8 (~3850 W): 3850 - 200 - 88 = ~3562 W. Matches heat pump at 3500 W. Active: heat pump + refrigerator + base load. Morning heat pump activation is typical. Hour 9 (350 W): Baseline. Active: refrigerator + base load. Hours 10-11 (~2750 W): 2750 - 200 - 88 = ~2462 W. Matches oven at 2400 W. Active: oven + refrigerator + base load. Late morning cooking is plausible. Hours 12-13 (350 W): Baseline. Active: refrigerator + base load. Hours 14-16 (~3850 W): Same as hours 7-8. Heat pump at 3500 W. Active: heat pump + refrigerator + base load. Afternoon heating/cooling cycle. Hours 17-18 (~6250 W): 6250 - 200 - 88 = ~5962 W. This matches heat pump (3500) + oven (2400) = 5900 W. Active: heat pump + oven + refrigerator + base load. Evening cooking while heat pump runs. Hours 19 (~3850 W): Oven turns off, heat pump continues. Active: heat pump + refrigerator + base load. Hour 20 (350 W): Baseline. Active: refrigerator + base load. Hours 21-22 (~7550 W): Same pattern as hours 3-5. EV charger. Active: EV charger + refrigerator + base load. Hour 23 (350 W): Baseline. Active: refrigerator + base load. Ambiguities: The refrigerator cycling means its actual instantaneous power varies (0 or 150W), but hourly averaging smooths this. If the oven and a space heater had similar ratings, hours 10-11 would be ambiguous.",
+      "metrics": [
+        "appliance_identification_accuracy",
+        "reasoning_quality",
+        "ambiguity_handling"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "nilm_L2_002",
+      "category": "NILM",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "A NILM algorithm has been applied to disaggregate 5 appliances from a 24-hour aggregate signal sampled at 1-minute intervals (1440 time steps). The ground truth and estimated appliance-level data are summarized below:\n\nAppliance      | True ON steps | Est. ON steps | TP  | FP  | FN  | True Energy (Wh) | Est. Energy (Wh) | Sum |y_hat-y| (W)\n---------------|---------------|---------------|-----|-----|-----|-------------------|-------------------|------------------\nRefrigerator   | 720           | 690           | 670 | 20  | 50  | 1,800             | 1,725             | 12,600\nMicrowave      | 15            | 18            | 14  | 4   | 1   | 300               | 355               | 2,800\nEV Charger     | 300           | 295           | 290 | 5   | 10  | 36,000            | 35,400            | 108,000\nHeat Pump      | 480           | 510           | 450 | 60  | 30  | 28,000            | 29,500            | 252,000\nDishwasher     | 90            | 120           | 75  | 45  | 15  | 1,350             | 1,800             | 18,900\n\nFor each appliance, compute:\n1. F1 score\n2. MAE (in watts, given 1440 time steps)\n3. SAE\n\nIdentify which appliance has the worst performance and explain the likely cause.",
+      "context": {
+        "num_timesteps": 1440,
+        "appliances": [
+          {
+            "name": "Refrigerator",
+            "true_on": 720,
+            "est_on": 690,
+            "TP": 670,
+            "FP": 20,
+            "FN": 50,
+            "true_energy_Wh": 1800,
+            "est_energy_Wh": 1725,
+            "sum_abs_error_W": 12600
+          },
+          {
+            "name": "Microwave",
+            "true_on": 15,
+            "est_on": 18,
+            "TP": 14,
+            "FP": 4,
+            "FN": 1,
+            "true_energy_Wh": 300,
+            "est_energy_Wh": 355,
+            "sum_abs_error_W": 2800
+          },
+          {
+            "name": "EV Charger",
+            "true_on": 300,
+            "est_on": 295,
+            "TP": 290,
+            "FP": 5,
+            "FN": 10,
+            "true_energy_Wh": 36000,
+            "est_energy_Wh": 35400,
+            "sum_abs_error_W": 108000
+          },
+          {
+            "name": "Heat Pump",
+            "true_on": 480,
+            "est_on": 510,
+            "TP": 450,
+            "FP": 60,
+            "FN": 30,
+            "true_energy_Wh": 28000,
+            "est_energy_Wh": 29500,
+            "sum_abs_error_W": 252000
+          },
+          {
+            "name": "Dishwasher",
+            "true_on": 90,
+            "est_on": 120,
+            "TP": 75,
+            "FP": 45,
+            "FN": 15,
+            "true_energy_Wh": 1350,
+            "est_energy_Wh": 1800,
+            "sum_abs_error_W": 18900
+          }
+        ]
+      },
+      "tools": [],
+      "ground_truth": "Refrigerator: Precision = 670/690 = 0.971, Recall = 670/720 = 0.931, F1 = 2*0.971*0.931/(0.971+0.931) = 0.950. MAE = 12600/1440 = 8.75 W. SAE = |1725-1800|/1800 = 0.042 (4.2%). Microwave: Precision = 14/18 = 0.778, Recall = 14/15 = 0.933, F1 = 2*0.778*0.933/(0.778+0.933) = 0.849. MAE = 2800/1440 = 1.94 W. SAE = |355-300|/300 = 0.183 (18.3%). EV Charger: Precision = 290/295 = 0.983, Recall = 290/300 = 0.967, F1 = 2*0.983*0.967/(0.983+0.967) = 0.975. MAE = 108000/1440 = 75.0 W. SAE = |35400-36000|/36000 = 0.017 (1.7%). Heat Pump: Precision = 450/510 = 0.882, Recall = 450/480 = 0.938, F1 = 2*0.882*0.938/(0.882+0.938) = 0.909. MAE = 252000/1440 = 175.0 W. SAE = |29500-28000|/28000 = 0.054 (5.4%). Dishwasher: Precision = 75/120 = 0.625, Recall = 75/90 = 0.833, F1 = 2*0.625*0.833/(0.625+0.833) = 0.714. MAE = 18900/1440 = 13.1 W. SAE = |1800-1350|/1350 = 0.333 (33.3%). Worst performer: Dishwasher, with F1 = 0.714 (lowest) and SAE = 33.3% (highest). Likely causes: (1) Dishwashers have multiple operating phases (wash, rinse, dry) with varying power levels (500-2000 W), making them hard to model with a single state. (2) High FP count (45) suggests the algorithm is confusing other appliance activity with dishwasher operation -- possibly misattributing heat pump transitions or base-load fluctuations. (3) The 33% energy overestimation confirms systematic over-attribution.",
+      "metrics": [
+        "metric_computation_accuracy",
+        "worst_performer_identification",
+        "causal_analysis_quality"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "nilm_L2_003",
+      "category": "NILM",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "Two NILM disaggregation approaches are applied to the same household dataset (REDD House 1, 7 days, 1 Hz sampling):\n\nApproach 1 -- Combinatorial Optimization (CO): At each time step, finds the combination of appliance states that minimizes the difference between the aggregate reading and the sum of estimated individual consumptions.\n\nApproach 2 -- Factorial Hidden Markov Model (FHMM): Models each appliance as an independent HMM and uses the Viterbi algorithm to find the most likely joint state sequence.\n\nResults (per-appliance F1 and MAE):\n\nAppliance      | CO F1  | CO MAE (W) | FHMM F1 | FHMM MAE (W)\n---------------|--------|------------|---------|-------------\nRefrigerator   | 0.82   | 35.2       | 0.89    | 22.1\nDish washer    | 0.55   | 18.7       | 0.62    | 15.3\nLighting       | 0.41   | 52.8       | 0.38    | 55.4\nWasher/Dryer   | 0.68   | 95.3       | 0.72    | 82.6\nMicrowave      | 0.60   | 12.4       | 0.54    | 14.8\n\nCompare the accuracy of the two approaches. For which appliance types is each approach better, and explain the technical reasons why. Under what practical conditions would you choose one over the other?",
+      "context": {
+        "dataset": "REDD House 1, 7 days, 1 Hz",
+        "results": {
+          "CO": {
+            "Refrigerator": {
+              "F1": 0.82,
+              "MAE_W": 35.2
+            },
+            "Dishwasher": {
+              "F1": 0.55,
+              "MAE_W": 18.7
+            },
+            "Lighting": {
+              "F1": 0.41,
+              "MAE_W": 52.8
+            },
+            "Washer_Dryer": {
+              "F1": 0.68,
+              "MAE_W": 95.3
+            },
+            "Microwave": {
+              "F1": 0.6,
+              "MAE_W": 12.4
+            }
+          },
+          "FHMM": {
+            "Refrigerator": {
+              "F1": 0.89,
+              "MAE_W": 22.1
+            },
+            "Dishwasher": {
+              "F1": 0.62,
+              "MAE_W": 15.3
+            },
+            "Lighting": {
+              "F1": 0.38,
+              "MAE_W": 55.4
+            },
+            "Washer_Dryer": {
+              "F1": 0.72,
+              "MAE_W": 82.6
+            },
+            "Microwave": {
+              "F1": 0.54,
+              "MAE_W": 14.8
+            }
+          }
+        }
+      },
+      "tools": [],
+      "ground_truth": "Overall comparison: FHMM outperforms CO on refrigerator (F1: 0.89 vs 0.82), dishwasher (0.62 vs 0.55), and washer/dryer (0.72 vs 0.68). CO outperforms FHMM on lighting (0.41 vs 0.38) and microwave (0.60 vs 0.54). Technical explanations: (1) FHMM is better for appliances with distinct, periodic operating patterns (refrigerator cycling, washer/dryer cycles) because the HMM captures temporal state transition probabilities. The refrigerator's regular on/off cycling is naturally modeled by HMM state transitions with well-defined transition probabilities. (2) CO is better for short-duration, high-power appliances like microwaves because CO independently optimizes each time step, which works well when the appliance creates a clear, unambiguous power signature. FHMM's temporal smoothing can actually blur short events. (3) Both struggle with lighting because lighting consists of many small, variable loads with overlapping power levels and no distinct temporal pattern. CO slightly edges out FHMM here because lighting changes are often independent across time steps, and FHMM's temporal assumptions (persistence of state) are misleading for frequently switched lights. Practical guidance: Choose CO when: computational resources are limited (CO is O(S^N) per time step but each step is independent), appliance mix is dominated by on/off appliances, real-time processing is needed. Choose FHMM when: appliances have multi-state operation (refrigerator, washer/dryer with wash/rinse/spin cycles), temporal patterns are predictable, accuracy on high-consumption appliances is prioritized, and offline batch processing is acceptable.",
+      "metrics": [
+        "comparison_accuracy",
+        "technical_explanation_quality",
+        "practical_guidance"
+      ],
+      "scoring": "rubric"
+    }
+  ]
+}

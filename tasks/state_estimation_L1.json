@@ -1,0 +1,117 @@
+{
+  "metadata": {
+    "category": "Distribution State Estimation",
+    "tier": "L1",
+    "source_platforms": [
+      {
+        "name": "Abur & Exposito - Power System State Estimation",
+        "url": "https://doi.org/10.1201/9780203913673",
+        "type": "textbook"
+      },
+      {
+        "name": "Monticelli - State Estimation in Electric Power Systems",
+        "url": "https://link.springer.com/book/10.1007/978-1-4615-4999-4",
+        "type": "textbook"
+      },
+      {
+        "name": "Primadianto & Lu 2017 Review",
+        "url": "https://doi.org/10.1109/TPWRS.2016.2632156",
+        "type": "review_paper"
+      }
+    ],
+    "ground_truth_references": [
+      "Abur & Exposito textbook worked examples for WLS, observability, bad data detection",
+      "Primadianto & Lu survey documenting transmission vs distribution SE differences"
+    ],
+    "de_biasing_applied": [
+      "Questions require explaining mechanisms, not citing formulas"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "state_estimation_L1_001",
+      "category": "Distribution State Estimation",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "The Weighted Least Squares (WLS) state estimation method minimizes an objective function. Which of the following correctly describes that objective?\n(A) Minimize the sum of squared measurement residuals, each weighted by the inverse of its measurement variance.\n(B) Minimize the sum of absolute measurement residuals without any weighting.\n(C) Minimize the maximum deviation between any single measurement and its estimated value.\n(D) Minimize the total reactive power loss across all branches in the network.",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(A) Minimize the sum of squared measurement residuals, each weighted by the inverse of its measurement variance. Formally, the WLS objective is J(x) = [z - h(x)]^T R^{-1} [z - h(x)], where z is the measurement vector, h(x) is the measurement function, x is the state vector, and R is the diagonal measurement error covariance matrix.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "state_estimation_L1_002",
+      "category": "Distribution State Estimation",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "For a power system with N buses, what is the minimum number of independent real-time measurements required to make the system observable for state estimation?\n(A) N\n(B) N - 1\n(C) 2N - 1\n(D) 2N + 1",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(C) 2N - 1. The state vector for a power system with N buses contains 2N - 1 independent state variables (N voltage magnitudes and N - 1 voltage angles, with one bus angle used as the reference). Therefore, at least 2N - 1 independent measurements are required for the system to be observable.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "state_estimation_L1_003",
+      "category": "Distribution State Estimation",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "What are pseudo-measurements in the context of distribution system state estimation, and why are they commonly needed?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "Pseudo-measurements are artificially generated measurement values, typically derived from historical load profiles, billing data, or load forecasts, that are injected into the state estimator to supplement the limited number of real-time measurements. They are commonly needed in distribution systems because, unlike transmission systems, distribution networks have very few real-time meters (often only at the substation and a handful of key nodes). Without pseudo-measurements, the system would be unobservable, making state estimation impossible. Pseudo-measurements are assigned high variance values in the measurement covariance matrix R to reflect their lower accuracy compared to actual metered data.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "state_estimation_L1_004",
+      "category": "Distribution State Estimation",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Two common methods for detecting bad (erroneous) data in state estimation are the Chi-squared test and the Largest Normalized Residual (LNR) test. Which of the following correctly distinguishes their roles?\n(A) The Chi-squared test identifies which specific measurement is bad; the LNR test determines whether bad data exists anywhere.\n(B) The Chi-squared test determines whether bad data exists anywhere in the measurement set; the LNR test identifies the specific measurement most likely to be erroneous.\n(C) Both tests perform identical functions but use different statistical distributions.\n(D) The Chi-squared test is used only for voltage measurements; the LNR test is used only for power flow measurements.",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(B) The Chi-squared test is a hypothesis test applied to the overall weighted residual sum J(x_hat). If J(x_hat) exceeds the chi-squared threshold for (m - n) degrees of freedom (where m is the number of measurements and n is the number of state variables), bad data is suspected somewhere in the measurement set. The Largest Normalized Residual test then identifies the specific bad measurement by computing the normalized residual r_i^N = |r_i| / sqrt(Omega_{ii}) for each measurement and flagging the one with the largest value (typically above a threshold of 3.0).",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "state_estimation_L1_005",
+      "category": "Distribution State Estimation",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "List three key differences between state estimation for transmission systems and state estimation for distribution systems.",
+      "context": {},
+      "tools": [],
+      "ground_truth": "Three key differences are: (1) Topology: Transmission networks are meshed, while distribution networks are predominantly radial (or weakly meshed), which affects observability analysis and the structure of the Jacobian matrix. (2) Phase balance: Transmission systems are typically analyzed as balanced three-phase systems using single-phase equivalent models, whereas distribution systems are inherently unbalanced across phases due to unequal loading, untransposed lines, and single-phase laterals, requiring three-phase state estimation models. (3) Measurement availability: Transmission systems have extensive SCADA instrumentation with real-time measurements at most substations and many line terminals, whereas distribution systems historically have very few real-time meters (often only at the substation head), necessitating heavy reliance on pseudo-measurements and making observability a much greater challenge.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "metadata": {
+    "category": "VPP Scheduling",
+    "tier": "L1",
+    "source_platforms": [
+      {
+        "name": "Pudjianto et al. 2007 - VPP Concept",
+        "url": "https://digital-library.theiet.org/doi/10.1049/iet-rpg_20070019",
+        "type": "foundational_paper"
+      },
+      {
+        "name": "NREL Battery Degradation Models",
+        "url": "https://www.nrel.gov/transportation/battery-lifespan.html",
+        "type": "technical_report"
+      },
+      {
+        "name": "FERC Order 2222",
+        "url": "https://www.ferc.gov/ferc-order-no-2222-explainer-facilitating-participation-electricity-markets-distributed-energy",
+        "type": "regulatory_document"
+      }
+    ],
+    "ground_truth_references": [
+      "Pudjianto et al. TVPP vs CVPP definitions",
+      "NREL cycle counting, Ah-throughput, rainflow methodology reports",
+      "Standard DR program taxonomy from DOE/FERC literature"
+    ],
+    "de_biasing_applied": [
+      "Conceptual questions require explanation of mechanisms, not just definitions"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "vpp_scheduling_L1_001",
+      "category": "VPP Scheduling",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Define a Virtual Power Plant (VPP). What are its typical components, and how does it differ from a traditional power plant?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "A Virtual Power Plant (VPP) is a cloud-based aggregation of distributed energy resources (DERs) that are coordinated to operate as a single, dispatchable entity in electricity markets. Unlike a traditional power plant (a single centralized generation facility), a VPP consists of geographically dispersed assets including: (1) Distributed generation: rooftop solar PV, small wind turbines, micro-CHP units, diesel backup generators; (2) Energy storage: battery energy storage systems (BESS), vehicle-to-grid (V2G) enabled EVs; (3) Flexible/controllable loads: HVAC systems, water heaters, industrial processes participating in demand response; (4) Sometimes small conventional generators. The VPP's central control platform uses communication infrastructure (SCADA, IoT, cloud computing) to monitor, forecast, and dispatch these assets in a coordinated manner. The key difference from a traditional plant is that a VPP has no single physical location -- it provides equivalent grid services (energy, capacity, ancillary services) through the orchestrated behavior of many small, distributed assets.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "vpp_scheduling_L1_002",
+      "category": "VPP Scheduling",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Describe three common battery degradation models used in BESS scheduling: cycle counting, Ah-throughput, and rainflow counting. What does each track and when is each most appropriate?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "Cycle counting: Tracks the number of full charge-discharge cycles. A full cycle is defined as discharging from 100% to 0% SOC and back (or equivalent). Partial cycles are counted fractionally (e.g., 80% to 20% = 0.6 cycles). Simple to implement but does not capture the effect of depth-of-discharge (DOD) or varying cycle depths. Appropriate for simple scheduling models or when battery usage patterns are relatively uniform. Ah-throughput: Tracks the total cumulative energy (in ampere-hours or kWh) that passes through the battery over its lifetime. Degradation is modeled as proportional to total throughput regardless of cycle depth. For example, a battery rated for 50,000 Ah throughput degrades linearly with cumulative charge/discharge. More nuanced than simple cycle counting but still does not capture non-linear DOD effects. Appropriate for medium-fidelity models where computational simplicity is valued. Rainflow counting: Borrowed from mechanical fatigue analysis, this algorithm identifies individual charge-discharge half-cycles of varying depths from an irregular SOC profile. Each identified half-cycle is mapped to a degradation contribution using a DOD-vs-cycles curve (typically non-linear: shallow cycles cause disproportionately less degradation). Most accurate for real-world irregular usage patterns. Appropriate for high-fidelity scheduling optimization where degradation cost is a significant factor, such as frequency regulation or multi-market bidding.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "vpp_scheduling_L1_003",
+      "category": "VPP Scheduling",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Classify demand response (DR) program types into incentive-based and price-based categories. For incentive-based, describe Direct Load Control (DLC) and Interruptible/Curtailable programs. For price-based, describe Time-of-Use (TOU), Critical Peak Pricing (CPP), and Real-Time Pricing (RTP).",
+      "context": {},
+      "tools": [],
+      "ground_truth": "Incentive-based DR programs: (1) Direct Load Control (DLC): The utility or aggregator remotely controls specific customer appliances (e.g., air conditioners, water heaters, pool pumps) during peak periods. Customers receive a bill credit or incentive payment for participation. Response is guaranteed since the utility has direct control. Typical curtailment: 1-4 hours. (2) Interruptible/Curtailable programs: Large commercial/industrial customers agree to reduce load to a predetermined level when called upon. In exchange, they receive rate discounts or incentive payments. Non-compliance may result in penalties. Typical minimum: 100 kW to several MW curtailment. Price-based DR programs: (1) Time-of-Use (TOU): Electricity prices vary by pre-set time blocks (e.g., off-peak $0.08/kWh 11PM-7AM, mid-peak $0.12/kWh 7AM-2PM, on-peak $0.20/kWh 2PM-7PM). Prices are known in advance (fixed for months/seasons). Customers shift consumption to cheaper periods. (2) Critical Peak Pricing (CPP): Similar to TOU but with an additional very high price tier ($0.50-$1.00+/kWh) triggered on a limited number of critical event days (typically 10-15 per year) during system emergencies. Customers receive day-ahead or same-day notification. (3) Real-Time Pricing (RTP): Prices change hourly (or sub-hourly) to reflect actual wholesale market conditions. Customers see prices that track locational marginal prices (LMPs) plus delivery charges. Provides the most granular price signal but requires sophisticated customer response or automation.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "vpp_scheduling_L1_004",
+      "category": "VPP Scheduling",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "What is the difference between a Technical Virtual Power Plant (TVPP) and a Commercial Virtual Power Plant (CVPP)?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "A Technical VPP (TVPP) focuses on the real-time operational management and grid support functions of aggregated DERs within a specific local network area. It considers network constraints (voltage limits, line thermal limits, congestion), provides ancillary services to the local distribution or transmission system operator (DSO/TSO), and manages the technical feasibility of dispatch schedules. The TVPP's objective is to maintain grid stability and power quality while maximizing the utilization of DER capabilities. It operates at the physical/electrical layer. A Commercial VPP (CVPP) focuses on the market-facing activities of aggregated DERs, optimizing their participation in wholesale energy markets, balancing markets, and ancillary service markets to maximize revenue or minimize costs. The CVPP does not necessarily consider local network constraints -- it treats the portfolio as an abstract set of assets with generation/consumption flexibility. Its objective is profit maximization through optimal bidding and scheduling. In practice, a complete VPP system combines both TVPP and CVPP functions: the CVPP determines the profit-maximizing market positions, while the TVPP ensures that the resulting dispatch is technically feasible within network constraints.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "vpp_scheduling_L1_005",
+      "category": "VPP Scheduling",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Explain state-of-charge (SOC) constraints and round-trip efficiency in the context of BESS scheduling. Why are these critical for optimization formulations?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "State-of-Charge (SOC) constraints define the permissible operating range of a battery. SOC represents the current stored energy as a fraction of total capacity (0-100%). Constraints include: (1) SOC bounds: SOC_min <= SOC(t) <= SOC_max for all time steps t. Typically SOC_min = 10-20% and SOC_max = 80-90% to limit degradation from deep discharge and overcharging. For a 500 kWh battery with 20-80% limits, usable capacity is 300 kWh. (2) SOC dynamics: SOC(t+1) = SOC(t) + (eta_charge * P_charge(t) - P_discharge(t)/eta_discharge) * delta_t / E_rated, where eta is efficiency and E_rated is rated capacity. (3) Initial/terminal SOC: SOC(0) = SOC_initial, and sometimes SOC(T) >= SOC_target to ensure the battery is not depleted at the end of the scheduling horizon. Round-trip efficiency (RTE) is the fraction of energy retrieved from the battery relative to what was stored: RTE = eta_charge * eta_discharge. Typical values are 85-95% for lithium-ion. For example, with 90% RTE, storing 10 kWh and fully discharging returns only 9 kWh. These constraints are critical for optimization because: (1) SOC bounds create coupling constraints across time steps -- a discharge decision at hour t limits what is available at hour t+1. (2) RTE means energy arbitrage (buy low, sell high) is only profitable if the price spread exceeds the efficiency loss. (3) Ignoring SOC limits leads to infeasible or damaging schedules; ignoring RTE overestimates revenue by 5-15%.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    }
+  ]
+}

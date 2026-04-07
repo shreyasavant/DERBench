@@ -1,0 +1,102 @@
+{
+  "metadata": {
+    "category": "DER Forecasting",
+    "tier": "L1",
+    "source_platforms": [
+      {
+        "name": "IEA PVPS Task 16 Reports",
+        "url": "https://iea-pvps.org/research-tasks/solar-resource-for-high-penetration-and-large-scale-applications/",
+        "type": "international_benchmark",
+        "last_accessed": "2025-03-01"
+      },
+      {
+        "name": "IEEE 1547-2018 Standard",
+        "url": "https://standards.ieee.org/standard/1547-2018.html",
+        "type": "standards_document",
+        "last_accessed": "2025-03-01"
+      },
+      {
+        "name": "Inman et al. 2013 - Solar Forecasting Review",
+        "url": "https://doi.org/10.1016/j.pecs.2013.06.002",
+        "type": "review_paper",
+        "last_accessed": "2025-03-01"
+      }
+    ],
+    "ground_truth_references": [
+      "IEA PVPS benchmarking reports for persistence and NWP methods",
+      "IEEE 1547-2018 Table 10 for Category III ride-through requirements",
+      "Inman et al. 2013 for MAPE limitations in solar forecasting"
+    ],
+    "de_biasing_applied": [
+      "Questions test application of knowledge, not verbatim recall of standard text",
+      "MCQ distractors based on common misconceptions, not random options"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "forecasting_L1_001",
+      "category": "DER Forecasting",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": ["domain_knowledge"],
+      "prompt": "Which of the following best describes the persistence forecasting method for solar PV output?\n(A) It uses numerical weather prediction models to estimate future irradiance.\n(B) It assumes the PV output at the next time step will equal the current observed output.\n(C) It applies an ARIMA model trained on 12 months of historical generation data.\n(D) It averages the PV output from the same hour over the past 30 days.",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(B) It assumes the PV output at the next time step will equal the current observed output.",
+      "metrics": ["accuracy"],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "forecasting_L1_002",
+      "category": "DER Forecasting",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": ["domain_knowledge"],
+      "prompt": "Global Horizontal Irradiance (GHI) is composed of which two primary components?\n(A) Direct Normal Irradiance (DNI) projected onto the horizontal plane plus Diffuse Horizontal Irradiance (DHI)\n(B) Reflected irradiance plus absorbed irradiance\n(C) Shortwave radiation plus longwave radiation\n(D) Beam irradiance plus ground-reflected irradiance",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(A) Direct Normal Irradiance (DNI) projected onto the horizontal plane plus Diffuse Horizontal Irradiance (DHI). Specifically, GHI = DNI * cos(zenith angle) + DHI.",
+      "metrics": ["accuracy"],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "forecasting_L1_003",
+      "category": "DER Forecasting",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": ["domain_knowledge"],
+      "prompt": "What does MAPE stand for in the context of forecast evaluation, and what is a key limitation of this metric when applied to solar PV forecasting?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "MAPE stands for Mean Absolute Percentage Error. A key limitation is that it becomes undefined or extremely large when actual values are near zero, which occurs regularly during sunrise, sunset, and nighttime periods for solar PV generation. This makes it poorly suited for evaluating forecasts across full diurnal cycles without filtering low-irradiance periods.",
+      "metrics": ["accuracy"],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "forecasting_L1_004",
+      "category": "DER Forecasting",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": ["domain_knowledge"],
+      "prompt": "According to IEEE 1547-2018, Category III DERs must remain connected (mandatory ride-through) during voltage excursions down to what per-unit voltage level for a continuous duration of up to 1 second?\n(A) 0.70 p.u.\n(B) 0.50 p.u.\n(C) 0.30 p.u.\n(D) 0.00 p.u.",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(B) 0.50 p.u. IEEE 1547-2018 Category III requires mandatory ride-through for voltages between 0.50 and 0.70 p.u. for durations up to 1 second, and permissive ride-through (may trip or ride through) for voltages below 0.50 p.u.",
+      "metrics": ["accuracy"],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "forecasting_L1_005",
+      "category": "DER Forecasting",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": ["domain_knowledge"],
+      "prompt": "For day-ahead solar PV forecasting (12-48 hour horizon), which of the following approaches generally provides the best accuracy?\n(A) Persistence model\n(B) Auto-regressive models based solely on recent PV measurements\n(C) NWP-based (Numerical Weather Prediction) models combined with statistical post-processing\n(D) Clear-sky index climatological averages",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(C) NWP-based models combined with statistical post-processing. At day-ahead horizons, local measurement-based methods (persistence, AR) lose skill rapidly because cloud cover and weather patterns dominate variability. NWP models forecast these meteorological drivers and, when combined with MOS (Model Output Statistics) or machine learning post-processing, consistently outperform purely statistical approaches at horizons beyond approximately 4-6 hours.",
+      "metrics": ["accuracy"],
+      "scoring": "binary"
+    }
+  ]
+}

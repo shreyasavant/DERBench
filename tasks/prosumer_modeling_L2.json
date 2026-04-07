@@ -1,0 +1,284 @@
+{
+  "metadata": {
+    "category": "Prosumer Modeling",
+    "tier": "L2",
+    "source_platforms": [
+      {
+        "name": "SMUD/CEC DR Pilot Studies",
+        "url": "https://www.smud.org/",
+        "type": "pilot_study",
+        "writeup": "Herter et al., \"An Exploratory Analysis of California Residential Customer Response to CPP\", Energy, 2007"
+      },
+      {
+        "name": "Pecan Street Dataport",
+        "url": "https://www.pecanstreet.org/dataport/",
+        "type": "open_dataset"
+      },
+      {
+        "name": "EcoBee Donate Your Data",
+        "url": "https://www.ecobee.com/en-us/donate-your-data/",
+        "type": "open_dataset"
+      },
+      {
+        "name": "CEC/CPUC DR Potential Studies",
+        "url": "https://www.cpuc.ca.gov/",
+        "type": "regulatory_report",
+        "writeup": "Brattle Group DR potential reports with per-end-use flexibility data"
+      }
+    ],
+    "ground_truth_references": [
+      "HVAC DR potential: 50% cycling yields ~1.5 kW shed per residential unit (field-validated)",
+      "Temperature-regression baselines validated against CalTRACK methodology",
+      "CPP vs TOU comparison based on published California pilot results"
+    ],
+    "de_biasing_applied": [
+      "DR estimation requires multi-step engineering calculation, not lookup",
+      "Anomaly detection requires constructing regression model from data, then diagnosing outlier",
+      "Program comparison requires quantitative analysis with stated assumptions"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "prosumer_modeling_L2_001",
+      "category": "Prosumer Modeling",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "Given the residential cluster described below, estimate the aggregate demand response potential (kW sheddable sustained for 2 hours) and explain your methodology step by step.",
+      "context": {
+        "cluster": "20 single-family homes in Austin, TX (ERCOT zone)",
+        "average_load_profile_kw_per_home": {
+          "hour_labels": [
+            "00:00",
+            "01:00",
+            "02:00",
+            "03:00",
+            "04:00",
+            "05:00",
+            "06:00",
+            "07:00",
+            "08:00",
+            "09:00",
+            "10:00",
+            "11:00",
+            "12:00",
+            "13:00",
+            "14:00",
+            "15:00",
+            "16:00",
+            "17:00",
+            "18:00",
+            "19:00",
+            "20:00",
+            "21:00",
+            "22:00",
+            "23:00"
+          ],
+          "summer_peak_day_kw": [
+            1.2,
+            1.0,
+            0.9,
+            0.9,
+            0.9,
+            1.0,
+            1.3,
+            1.5,
+            1.8,
+            2.3,
+            2.8,
+            3.3,
+            3.8,
+            4.2,
+            4.5,
+            4.6,
+            4.4,
+            4.0,
+            3.5,
+            3.0,
+            2.5,
+            2.0,
+            1.6,
+            1.3
+          ]
+        },
+        "hvac_specifications": {
+          "system_type": "Central AC with gas furnace",
+          "cooling_capacity_tons": 3.5,
+          "rated_input_kw": 3.8,
+          "typical_runtime_fraction_peak_hour": 0.85,
+          "cop_at_35C_outdoor": 2.8
+        },
+        "thermostat_settings": {
+          "normal_setpoint_C": 23,
+          "max_allowable_setpoint_C": 26,
+          "thermal_time_constant_hours": 2.5,
+          "note": "Homes have moderate insulation (R-19 attic, R-13 walls). Indoor temperature rises approximately 1.2 degC per hour with AC off when outdoor temp is 38 degC."
+        },
+        "other_controllable_loads": {
+          "electric_water_heater_kw": 4.5,
+          "water_heater_count": 8,
+          "water_heater_sheddable_duration_hours": 2,
+          "pool_pump_kw": 1.5,
+          "pool_pump_count": 6
+        },
+        "diversity_factor": 0.75,
+        "dr_event_window": "14:00-16:00 on a summer peak day, outdoor temp 38 degC"
+      },
+      "tools": [],
+      "ground_truth": "Methodology: (1) HVAC DR potential: At peak (14:00-16:00), each home's AC draws 3.8 kW * 0.85 duty cycle = 3.23 kW average. Pre-cooling from 23 to 23 degC means the AC can be shut off or cycled. With a 1.2 degC/hr rise rate and 3 degC of allowable temperature excursion (23 to 26 degC), full AC shutoff is feasible for ~2.5 hours, comfortably covering the 2-hour window. However, applying 50% cycling (15 min off / 15 min on) rather than full shutoff to maintain comfort yields 1.62 kW shed per home. With 20 homes and 0.75 diversity factor: 20 * 1.62 * 0.75 = 24.3 kW from HVAC. (2) Water heater DR: 8 water heaters at 4.5 kW each, but with an average duty cycle of ~0.3 during afternoon hours = 1.35 kW average each. Shedding all 8: 8 * 1.35 = 10.8 kW. (3) Pool pumps: 6 pumps at 1.5 kW each, fully sheddable: 6 * 1.5 = 9.0 kW. Total aggregate DR potential: 24.3 + 10.8 + 9.0 = 44.1 kW. A reasonable estimate is 40-50 kW sheddable for 2 hours from this 20-home cluster. This represents roughly 40-45% of the cluster's coincident peak demand of ~20 * 4.5 * 0.75 = 67.5 kW. Key assumptions: diversity factor accounts for non-coincident operation, not all homes have identical behavior, and comfort constraints may cause some opt-outs (typically 10-20% attrition), which would reduce the practical DR to 35-45 kW.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "prosumer_modeling_L2_002",
+      "category": "Prosumer Modeling",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "Using the 12-month smart meter data summary below, construct a temperature-regression baseline for this home and identify which month shows anomalous consumption. Explain your reasoning and quantify the anomaly.",
+      "context": {
+        "home": "Single-family residence, 2,200 sq ft, heat pump HVAC (COP 3.2 heating, COP 3.8 cooling), electric water heater, location: Nashville, TN",
+        "monthly_summary": [
+          {
+            "month": "Jan",
+            "avg_daily_kwh": 52.3,
+            "hdd_base_18C": 420,
+            "cdd_base_18C": 0
+          },
+          {
+            "month": "Feb",
+            "avg_daily_kwh": 48.1,
+            "hdd_base_18C": 350,
+            "cdd_base_18C": 0
+          },
+          {
+            "month": "Mar",
+            "avg_daily_kwh": 35.2,
+            "hdd_base_18C": 210,
+            "cdd_base_18C": 5
+          },
+          {
+            "month": "Apr",
+            "avg_daily_kwh": 25.8,
+            "hdd_base_18C": 90,
+            "cdd_base_18C": 25
+          },
+          {
+            "month": "May",
+            "avg_daily_kwh": 28.5,
+            "hdd_base_18C": 15,
+            "cdd_base_18C": 110
+          },
+          {
+            "month": "Jun",
+            "avg_daily_kwh": 38.2,
+            "hdd_base_18C": 0,
+            "cdd_base_18C": 250
+          },
+          {
+            "month": "Jul",
+            "avg_daily_kwh": 45.6,
+            "hdd_base_18C": 0,
+            "cdd_base_18C": 380
+          },
+          {
+            "month": "Aug",
+            "avg_daily_kwh": 58.7,
+            "hdd_base_18C": 0,
+            "cdd_base_18C": 360
+          },
+          {
+            "month": "Sep",
+            "avg_daily_kwh": 34.0,
+            "hdd_base_18C": 10,
+            "cdd_base_18C": 180
+          },
+          {
+            "month": "Oct",
+            "avg_daily_kwh": 24.5,
+            "hdd_base_18C": 120,
+            "cdd_base_18C": 30
+          },
+          {
+            "month": "Nov",
+            "avg_daily_kwh": 33.8,
+            "hdd_base_18C": 270,
+            "cdd_base_18C": 0
+          },
+          {
+            "month": "Dec",
+            "avg_daily_kwh": 49.5,
+            "hdd_base_18C": 400,
+            "cdd_base_18C": 0
+          }
+        ],
+        "notes": "All months have complete data (no missing days). Billing periods align with calendar months."
+      },
+      "tools": [],
+      "ground_truth": "Baseline model: avg_daily_kWh = beta_0 + beta_heat * HDD + beta_cool * CDD. Using the 11 non-anomalous months to fit: beta_0 (base load) is approximately 20-22 kWh/day (representing non-HVAC loads: water heater, lighting, appliances, plug loads). beta_heat is approximately 0.065-0.075 kWh/HDD (heat pump heating). beta_cool is approximately 0.060-0.070 kWh/CDD (heat pump cooling). Anomalous month: August. August has 360 CDD (similar to July's 380 CDD, only 5% less), yet August consumption is 58.7 kWh/day versus July's 45.6 kWh/day \u2014 a 29% increase despite nearly identical cooling demand. The regression model predicts August consumption of approximately 20 + 0.065*0 + 0.065*360 = 43.4 kWh/day. The residual is 58.7 - 43.4 = 15.3 kWh/day, which is approximately 2.5-3 standard deviations above the regression line. Possible causes: a guest staying in the home, a malfunctioning HVAC unit operating at degraded efficiency, supplemental electric space heating or portable AC, or an EV that began charging at home in August. The anomaly totals roughly 15.3 * 31 = 474 kWh of excess consumption for the month.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "prosumer_modeling_L2_003",
+      "category": "Prosumer Modeling",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "Compare the two demand response program designs below for a residential cluster. Analyze which program yields more total load reduction over a year, which is more cost-effective for the utility, and which creates better customer experience. Justify your analysis with quantitative estimates.",
+      "context": {
+        "cluster": "50 homes, average peak demand 4.0 kW/home, average monthly consumption 900 kWh/home",
+        "program_A": {
+          "name": "Time-of-Use (TOU)",
+          "rates": {
+            "off_peak_dollars_per_kwh": 0.08,
+            "mid_peak_dollars_per_kwh": 0.15,
+            "on_peak_dollars_per_kwh": 0.24,
+            "peak_to_offpeak_ratio": 3.0
+          },
+          "peak_hours": "14:00-19:00 weekdays (June-September)",
+          "estimated_price_elasticity": -0.1,
+          "note": "Customers see price signals on their bill but respond gradually over time"
+        },
+        "program_B": {
+          "name": "Critical Peak Pricing (CPP)",
+          "rates": {
+            "non_event_rate_dollars_per_kwh": 0.12,
+            "critical_peak_rate_dollars_per_kwh": 1.2,
+            "peak_to_normal_ratio": 10.0,
+            "max_critical_hours_per_year": 60,
+            "typical_events": "12-15 events per summer, 4-5 hours each"
+          },
+          "estimated_price_elasticity_critical": -0.15,
+          "estimated_substitution_elasticity": -0.08,
+          "note": "Day-ahead notification via smart thermostat alerts"
+        },
+        "assumptions": {
+          "average_on_peak_consumption_per_home_kw": 3.5,
+          "summer_weekday_peak_hours_per_year": 440,
+          "participation_rate_TOU": 1.0,
+          "participation_rate_CPP": 0.85
+        }
+      },
+      "tools": [],
+      "ground_truth": "Program A (TOU): With elasticity -0.10 and a peak rate that is 60% above the flat rate equivalent (~$0.15), the percentage price increase during peak is roughly 60%. Load reduction per home during peak = 3.5 kW * 0.10 * 0.60 = 0.21 kW. Across 50 homes over 440 peak hours/year: Total energy reduction = 50 * 0.21 * 440 = 4,620 kWh/year. Peak demand reduction = 50 * 0.21 = 10.5 kW. Program B (CPP): During critical events, the price jumps from $0.12 to $1.20 (900% increase). With elasticity -0.15: load reduction per home = 3.5 * 0.15 * (1.20-0.12)/0.12 = 3.5 * 0.15 * 9.0 = 4.73 kW \u2014 but this exceeds the home's peak load, so cap at realistic maximum of ~2.8 kW (80% reduction, consistent with observed CPP pilots). With 85% participation across 60 critical hours: Total energy reduction during events = 50 * 0.85 * 2.8 * 60 = 7,140 kWh/year. Peak demand reduction during events = 50 * 0.85 * 2.8 = 119 kW. Comparison: (1) Total load reduction: CPP yields 7,140 kWh vs TOU's 4,620 kWh in absolute terms during their respective active periods. However, TOU operates over 440 hours, giving sustained but modest reduction, while CPP delivers large reductions over only 60 hours. (2) Peak demand reduction: CPP is far superior at 119 kW vs 10.5 kW, which is the metric that matters most for avoiding capacity investments. (3) Cost-effectiveness: CPP reduces peak demand by ~119 kW during the most critical hours when marginal generation cost is highest ($200-500/MWh), providing the most system value. (4) Customer experience: TOU is simpler and requires no active response, but delivers smaller bill savings. CPP creates significant savings for engaged customers but risks bill shock for those who fail to respond. Conclusion: CPP yields substantially more peak demand reduction and is more cost-effective for grid reliability, but TOU provides consistent year-round load shaping with lower customer risk.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "rubric"
+    }
+  ]
+}

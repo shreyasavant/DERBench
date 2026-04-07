@@ -1,0 +1,119 @@
+{
+  "metadata": {
+    "category": "Hosting Capacity Analysis",
+    "tier": "L1",
+    "source_platforms": [
+      {
+        "name": "EPRI Hosting Capacity Reports",
+        "url": "https://www.epri.com/research/products/000000003002004777",
+        "type": "technical_report",
+        "writeup": "EPRI 3002001278: Stochastic Analysis to Determine Feeder Hosting Capacity"
+      },
+      {
+        "name": "ANSI C84.1",
+        "url": "https://webstore.ansi.org/standards/nema/ansinemac842020r2025",
+        "type": "standards_document"
+      },
+      {
+        "name": "CPUC Integration Capacity Analysis",
+        "url": "https://www.cpuc.ca.gov/Rule21/",
+        "type": "regulatory_methodology"
+      }
+    ],
+    "ground_truth_references": [
+      "EPRI reports defining iterative, stochastic, streamlined HC methods",
+      "ANSI C84.1 Range A voltage criteria for interconnection",
+      "CPUC ICA methodology documents for static vs dynamic HC"
+    ],
+    "de_biasing_applied": [
+      "Concepts tested via application scenarios, not standard text recall"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "hosting_capacity_L1_001",
+      "category": "Hosting Capacity Analysis",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "EPRI describes three main approaches to hosting capacity analysis. Which of the following correctly lists them?\n(A) Iterative, stochastic, and streamlined\n(B) Deterministic, probabilistic, and heuristic\n(C) Static, dynamic, and transient\n(D) Voltage-based, thermal-based, and protection-based",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(A) Iterative, stochastic, and streamlined. The iterative method places DER at every node and increases size until a violation occurs. The stochastic method uses Monte Carlo sampling of random DER locations and sizes. The streamlined method uses simplified voltage and thermal calculations to rapidly screen feeders without full power flow.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "hosting_capacity_L1_002",
+      "category": "Hosting Capacity Analysis",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "According to IEEE 1547 and ANSI C84.1, what is the acceptable steady-state voltage range (Range A) at the point of common coupling for DER interconnection, expressed in per-unit?\n(A) 0.90 to 1.10 p.u.\n(B) 0.95 to 1.05 p.u.\n(C) 0.97 to 1.03 p.u.\n(D) 0.88 to 1.10 p.u.",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(B) 0.95 to 1.05 p.u. ANSI C84.1 Range A specifies a service voltage range of 114V to 126V on a 120V base, which corresponds to 0.95 to 1.05 per-unit. Hosting capacity analysis uses this as the primary voltage criterion \u2014 DER additions that push any bus voltage outside this range represent a hosting capacity violation.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "hosting_capacity_L1_003",
+      "category": "Hosting Capacity Analysis",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "In the context of hosting capacity analysis, what are the two primary thermal limit criteria that constrain the amount of DER that can be interconnected on a distribution feeder?\n(A) Conductor ampacity limits and transformer loading limits\n(B) Ambient temperature limits and soil thermal resistivity limits\n(C) Substation transformer limits and transmission line limits\n(D) Cable insulation temperature limits and switchgear current limits",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(A) Conductor ampacity limits and transformer loading limits. When DER generation exceeds local load, reverse power flow can cause line currents to exceed conductor ampacity ratings (typically expressed as a percentage of the line's normal or emergency rating). Similarly, distribution transformers (both service transformers and substation transformers) have kVA ratings that can be exceeded by reverse power flow from high DER penetration.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "hosting_capacity_L1_004",
+      "category": "Hosting Capacity Analysis",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Why is reverse power flow significant in hosting capacity analysis for distribution feeders with high DER penetration?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "Reverse power flow occurs when local DER generation exceeds the local load demand, causing power to flow from the distribution feeder back toward the substation. This is significant for hosting capacity because: (1) distribution systems were traditionally designed for unidirectional power flow, so protection schemes (e.g., overcurrent relays, fuse-recloser coordination) may misoperate; (2) reverse flow raises voltages along the feeder, potentially exceeding the ANSI C84.1 upper limit of 1.05 p.u.; (3) voltage regulators and load tap changers may hunt or operate incorrectly since they were set for forward-flow voltage profiles; and (4) line and transformer loading can increase beyond rated values. Reverse power flow is often the binding constraint that sets the hosting capacity ceiling on lightly loaded feeders.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "hosting_capacity_L1_005",
+      "category": "Hosting Capacity Analysis",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "What is the difference between static hosting capacity and dynamic hosting capacity?\n(A) Static uses AC power flow while dynamic uses DC power flow approximations\n(B) Static is calculated for a single worst-case snapshot, while dynamic is updated over time using varying load and generation profiles\n(C) Static applies to inverter-based DER while dynamic applies to synchronous machine DER\n(D) Static considers only voltage criteria while dynamic considers only thermal criteria",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(B) Static hosting capacity is calculated for a single worst-case operating condition (typically minimum load and maximum generation), producing a conservative fixed value. Dynamic hosting capacity is recalculated periodically (e.g., hourly or sub-hourly) using time-varying load profiles, weather-dependent DER generation forecasts, and real-time network topology. Dynamic HCA can reveal that significantly more DER can be safely interconnected during periods of high load or low irradiance, enabling utilities to offer time-dependent or conditional interconnection agreements.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    }
+  ]
+}

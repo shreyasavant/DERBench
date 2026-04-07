@@ -1,0 +1,238 @@
+{
+  "metadata": {
+    "category": "Grid-Edge Control",
+    "tier": "L3",
+    "source_platforms": [
+      {
+        "name": "IEEE 13-Bus & 34-Bus Test Feeders",
+        "url": "https://cmte.ieee.org/pes-testfeeders/resources/",
+        "type": "test_feeder"
+      },
+      {
+        "name": "pandapower",
+        "url": "https://www.pandapower.org/",
+        "type": "simulation_tool",
+        "writeup": "Thurner et al., IEEE Trans. Power Systems, 2018"
+      },
+      {
+        "name": "NREL PyDSS",
+        "url": "https://github.com/NREL/PyDSS",
+        "type": "simulation_tool"
+      },
+      {
+        "name": "EPRI OpenDSS",
+        "url": "https://www.epri.com/pages/sa/opendss",
+        "type": "simulation_tool"
+      }
+    ],
+    "ground_truth_references": [
+      "pandapower built-in IEEE test cases with documented power flow solutions",
+      "NREL QSTS simulation results for PV+BESS feeders",
+      "EPRI published DER control case studies on test circuits"
+    ],
+    "de_biasing_applied": [
+      "Tasks require writing executable code, not recalling solutions",
+      "Success criteria are simulation-verified (all voltages within limits), not memorized values"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "grid_edge_control_L3_001",
+      "category": "Grid-Edge Control",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "execution_tool_use"
+      ],
+      "prompt": "Load the provided pandapower network model of a modified IEEE 13-bus feeder with high PV penetration. Run a power flow analysis to identify all bus voltage violations (outside 0.95-1.05 p.u.). Then modify the DER inverter setpoints to enable volt-var control and re-run the power flow to resolve the violations. If volt-var alone is insufficient, apply volt-watt curtailment. Verify that all bus voltages are within the acceptable range after your modifications. Report the initial violations, the control actions taken, and the final voltage profile.",
+      "context": {
+        "network_file": "data/ieee13_high_pv.json",
+        "network_description": {
+          "format": "pandapower JSON",
+          "buses": 13,
+          "voltage_kv": 4.16,
+          "total_load_kw": 1800,
+          "total_load_kvar": 600,
+          "total_pv_kw": 2400,
+          "pv_locations": [
+            "bus 634 (800 kW)",
+            "bus 675 (1200 kW)",
+            "bus 611 (400 kW)"
+          ],
+          "inverter_initial_mode": "unity_power_factor",
+          "scenario": "Clear summer midday, all PV at 95% output"
+        },
+        "volt_var_curve": {
+          "v_points_pu": [
+            0.92,
+            0.98,
+            1.02,
+            1.05,
+            1.08
+          ],
+          "q_points_pct_of_kva": [
+            44,
+            22,
+            0,
+            -22,
+            -44
+          ],
+          "note": "Piecewise linear, positive Q = inject (capacitive), negative Q = absorb (inductive)"
+        },
+        "volt_watt_curve": {
+          "v_points_pu": [
+            1.06,
+            1.1
+          ],
+          "p_points_pct_of_rated": [
+            100,
+            20
+          ],
+          "note": "Linear curtailment from 100% to 20% of rated output between 1.06 and 1.10 p.u."
+        },
+        "success_criteria": {
+          "all_bus_voltages_within": [
+            0.95,
+            1.05
+          ],
+          "must_report": [
+            "initial_violations",
+            "control_actions",
+            "final_voltage_profile"
+          ],
+          "prefer_minimum_curtailment": true
+        },
+        "instructions": [
+          "Load the pandapower network from the JSON file using run_powerflow.",
+          "Run initial power flow and extract bus voltage magnitudes.",
+          "Identify all buses with voltage outside 0.95-1.05 p.u.",
+          "Modify the PV inverter reactive power setpoints at violating buses to implement the volt-var curve using modify_network.",
+          "Re-run power flow and check if violations are resolved.",
+          "If any violations remain, apply the volt-watt curve to curtail active power at those buses.",
+          "Re-run power flow and verify all voltages are within limits.",
+          "Report a table of bus voltages before and after control actions."
+        ]
+      },
+      "tools": [
+        "run_powerflow",
+        "modify_network",
+        "execute_python"
+      ],
+      "ground_truth": "Initial power flow should reveal overvoltage at buses 675 (~1.07 p.u.) and 634 (~1.06 p.u.) due to reverse power flow from 2400 kW PV against 1800 kW load. Enabling volt-var control should reduce voltages by absorbing reactive power at high-voltage buses. The 1200 kW inverter at bus 675 (with ~1400 kVA rating) can absorb approximately 450 kvar at 1.07 p.u. per the volt-var curve, reducing voltage by approximately 0.02 p.u. The 800 kW inverter at bus 634 (with ~900 kVA rating) can absorb approximately 145 kvar. If bus 634 remains marginally above 1.05 p.u. after volt-var, minimal volt-watt curtailment (5-10% of rated power) should resolve the remaining violation. Final voltage profile should show all buses between 0.95 and 1.05 p.u. with total active power curtailment less than 100 kW.",
+      "metrics": [
+        "accuracy",
+        "code_execution_success"
+      ],
+      "scoring": "execution_based"
+    },
+    {
+      "task_id": "grid_edge_control_L3_002",
+      "category": "Grid-Edge Control",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "execution_tool_use"
+      ],
+      "prompt": "Perform a 24-hour quasi-static time series (QSTS) simulation of a distribution feeder with solar PV and battery storage. The simulation should step through each 15-minute interval, run a power flow, check for voltage violations, and dispatch battery storage to maintain voltages within ANSI C84.1 Range A (0.95-1.05 p.u.) while minimizing energy curtailment. At the end, report the total energy curtailed, battery cycles used, maximum and minimum voltages observed, and the number of timesteps with violations before and after the BESS dispatch.",
+      "context": {
+        "network_file": "data/ieee34_pv_bess.json",
+        "timeseries_file": "data/ieee34_load_pv_24hr.csv",
+        "network_description": {
+          "format": "pandapower JSON",
+          "buses": 34,
+          "voltage_kv": 24.9,
+          "peak_load_kw": 2100,
+          "total_pv_capacity_kw": 1800,
+          "pv_buses": [
+            "bus 840 (600 kW)",
+            "bus 844 (500 kW)",
+            "bus 848 (400 kW)",
+            "bus 860 (300 kW)"
+          ],
+          "bess_units": [
+            {
+              "bus": "840",
+              "rated_kw": 300,
+              "rated_kwh": 900,
+              "initial_soc_pct": 50,
+              "inverter_kva": 350
+            },
+            {
+              "bus": "848",
+              "rated_kw": 200,
+              "rated_kwh": 600,
+              "initial_soc_pct": 50,
+              "inverter_kva": 230
+            }
+          ],
+          "scenario": "Summer day with variable cloudiness"
+        },
+        "timeseries_description": {
+          "columns": [
+            "timestamp",
+            "load_multiplier",
+            "pv_multiplier"
+          ],
+          "intervals": 96,
+          "temporal_resolution_min": 15,
+          "load_profile": "Summer residential with evening peak at 18:00-20:00",
+          "pv_profile": "Variable cloud day with GHI fluctuations between 200-950 W/m2"
+        },
+        "dispatch_rules": {
+          "priority_1": "Resolve overvoltage by absorbing reactive power (volt-var), then charging BESS",
+          "priority_2": "Resolve undervoltage by discharging BESS, then injecting reactive power",
+          "priority_3": "Apply active power curtailment only as last resort",
+          "bess_soc_limits": {
+            "min_pct": 10,
+            "max_pct": 95
+          },
+          "bess_charge_from_grid": false
+        },
+        "success_criteria": {
+          "all_bus_voltages_within": [
+            0.95,
+            1.05
+          ],
+          "max_timesteps_with_violations": 0,
+          "total_energy_curtailed_kwh_max": 200,
+          "must_report": [
+            "voltage_violations_before_dispatch",
+            "voltage_violations_after_dispatch",
+            "total_energy_curtailed_kwh",
+            "bess_840_final_soc_pct",
+            "bess_848_final_soc_pct",
+            "max_voltage_pu",
+            "min_voltage_pu",
+            "bess_equivalent_cycles"
+          ]
+        },
+        "instructions": [
+          "Load the pandapower network and the 24-hour time series CSV.",
+          "Initialize BESS state-of-charge at 50% for both units.",
+          "For each of the 96 timesteps: (a) update load and PV output using the multipliers, (b) run power flow, (c) check for voltage violations at all buses.",
+          "If overvoltage detected: first apply volt-var absorption at nearest PV inverter, then charge BESS at the violating bus (reduces net injection). If still violating, curtail PV active power.",
+          "If undervoltage detected: discharge BESS at the nearest bus, then inject reactive power from BESS inverter.",
+          "Respect BESS SOC limits (10%-95%) and do not charge BESS from grid (only from excess PV).",
+          "After all 96 timesteps, compile the summary report with all required metrics.",
+          "Generate a plot of voltage at the most critical bus over 24 hours (before and after dispatch)."
+        ]
+      },
+      "tools": [
+        "run_powerflow",
+        "modify_network",
+        "execute_python",
+        "query_timeseries"
+      ],
+      "ground_truth": "A properly implemented QSTS with BESS dispatch should eliminate all voltage violations across the 96 timesteps. Without dispatch, expect 15-25 timesteps with overvoltage (midday, high PV) and 5-10 timesteps with undervoltage (evening peak, low PV). The BESS should charge during midday overvoltage periods (absorbing excess PV) and discharge during evening undervoltage (supporting load). Total energy curtailment should be under 200 kWh if BESS is properly utilized. BESS equivalent cycles should be approximately 0.5-0.8 cycles for each unit over the 24-hour period. The 840 bus BESS (300 kW, 900 kWh) should end the day at roughly 30-50% SOC after evening discharge, and the 848 bus BESS (200 kW, 600 kWh) at roughly 25-45% SOC. Key implementation checks: (1) SOC constraints are respected, (2) BESS is not charged from grid, (3) dispatch priority order is followed, (4) power flow is re-run after each control action within a timestep.",
+      "metrics": [
+        "accuracy",
+        "code_execution_success"
+      ],
+      "scoring": "execution_based"
+    }
+  ]
+}

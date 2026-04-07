@@ -1,0 +1,125 @@
+{
+  "metadata": {
+    "category": "NILM",
+    "tier": "L1",
+    "source_platforms": [
+      {
+        "name": "Hart 1992 - Foundational NILM Paper",
+        "url": "https://doi.org/10.1109/5.192069",
+        "type": "foundational_paper"
+      },
+      {
+        "name": "NILMTK",
+        "url": "https://github.com/nilmtk/nilmtk",
+        "type": "toolkit",
+        "writeup": "Batra et al., NILMTK: An Open Source Toolkit, e-Energy 2014"
+      },
+      {
+        "name": "REDD Dataset",
+        "url": "https://www.kaggle.com/datasets/pawelkauf/redd-part",
+        "type": "open_dataset",
+        "writeup": "Kolter & Johnson, REDD: A Public Data Set for Energy Disaggregation, SustKDD 2011"
+      },
+      {
+        "name": "Pecan Street Dataport",
+        "url": "https://www.pecanstreet.org/dataport/",
+        "type": "open_dataset"
+      }
+    ],
+    "ground_truth_references": [
+      "Hart 1992 defines event-based vs state-based disaggregation",
+      "NILMTK standardized metrics: F1, MAE, SAE, NDE",
+      "Appliance power signatures from Pecan Street measured data"
+    ],
+    "de_biasing_applied": [
+      "Questions test understanding of tradeoffs and limitations, not just definitions"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "nilm_L1_001",
+      "category": "NILM",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Define Non-Intrusive Load Monitoring (NILM). Why is it important for distributed energy resource (DER) management, and what is its core technical challenge?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "Non-Intrusive Load Monitoring (NILM), also called energy disaggregation, is the computational process of estimating individual appliance-level power consumption from a single aggregate power measurement at the utility meter or main electrical panel, without requiring sub-meters on each appliance. The core technical challenge is the ill-posed inverse problem: decomposing one aggregate signal into the sum of multiple unknown component signals, where different combinations of appliance states can produce similar aggregate readings. NILM is important for DER management because: (1) It enables granular load visibility needed for demand response -- identifying which loads are flexible/curtailable (e.g., HVAC, EV chargers, water heaters) without expensive per-device metering. (2) It supports behind-the-meter DER coordination by distinguishing controllable from non-controllable loads. (3) It facilitates energy audits and behavioral feedback to consumers, reducing consumption by 5-15% (Armel et al., 2013). (4) It helps VPP aggregators understand the load composition of participating households for more accurate flexibility estimation. (5) It can detect EV charging patterns for V2G scheduling and identify anomalous consumption indicating equipment faults.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "nilm_L1_002",
+      "category": "NILM",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Compare event-based and state-based disaggregation approaches in NILM. How does each method work, and what are the tradeoffs?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "Event-based disaggregation: Detects discrete changes (events) in the aggregate power signal -- step increases or decreases that correspond to appliances turning on or off. The algorithm: (1) monitors the aggregate signal for significant power transitions (edges), (2) extracts features of each event (magnitude, direction, timing, transient shape, harmonics), (3) matches events to known appliance signatures using classification (e.g., kNN, SVM, or lookup tables). Strengths: Works well for on/off appliances with distinct power signatures; computationally lightweight; requires only 1 Hz or lower sampling for basic detection. Weaknesses: Struggles with continuously-variable loads (e.g., variable-speed drives, dimmable lights); simultaneous switching events cause ambiguity; requires a library of pre-labeled appliance signatures. State-based disaggregation: Models the aggregate signal as the output of a set of appliance state machines operating in parallel. Common approaches use Hidden Markov Models (HMMs) or Factorial HMMs (FHMMs), where each appliance has hidden states (off, low, medium, high) and the aggregate is the sum of all appliance states. The Viterbi algorithm or MCMC sampling infers the most likely sequence of states. Strengths: Can handle multi-state appliances; provides continuous time-series estimates; does not require explicit event detection. Weaknesses: Computationally expensive (state space grows exponentially with number of appliances); may require longer training data; can struggle with appliances that have similar power states.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "nilm_L1_003",
+      "category": "NILM",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "List typical steady-state power signatures for the following appliances and explain how these signatures help in NILM disaggregation: refrigerator, microwave oven, Level 2 EV charger, and heat pump.",
+      "context": {},
+      "tools": [],
+      "ground_truth": "Refrigerator: ~100-200 W (typically ~150 W) continuous draw during compressor-on cycles, cycling on/off every 20-40 minutes. The compressor startup shows a brief inrush current spike (~3x steady-state, lasting 0.5-2 seconds). NILM signature: periodic rectangular pulses of ~150 W with predictable duty cycle (~30-50%). The cycling pattern and consistent magnitude make it one of the easiest appliances to identify. Microwave oven: ~1000-1500 W (typically ~1200 W) for short durations (1-10 minutes). Very distinctive high-power, short-duration rectangular profile. Some microwaves also draw ~3-5 W in standby. NILM signature: sharp step-up of ~1200 W with flat top and sharp step-down. Easy to detect due to high magnitude; may be confused with hair dryers or kettles if only magnitude is used. Level 2 EV charger: ~3.3-7.2 kW (typically 7.2 kW for 32A/240V) for extended periods (2-8 hours). Some smart chargers modulate power. Very high constant draw. NILM signature: large step change (~7200 W) sustained for hours, typically occurring in evening/night. Distinctive due to very high magnitude and long duration; unlikely to be confused with other household loads. Heat pump: ~3-5 kW during compressor operation, with variable power if equipped with an inverter-driven compressor. Defrost cycles cause temporary power spikes. NILM signature: sustained draw of 3-5 kW with seasonal correlation (heating/cooling). Inverter models show continuously varying power, making disaggregation harder than single-speed units. These power signatures help NILM by providing prior knowledge about the expected magnitude, duration, and temporal pattern of each appliance, constraining the disaggregation search space.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "nilm_L1_004",
+      "category": "NILM",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Define the following NILM evaluation metrics: F1 score (as applied to appliance state detection), Mean Absolute Error (MAE), Signal Aggregate Error (SAE), and Normalized Disaggregation Error (NDE). How is each computed and what aspect of disaggregation quality does it measure?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "F1 Score (for appliance state detection): The harmonic mean of precision and recall for detecting whether an appliance is on or off at each time step. Precision = TP/(TP+FP), Recall = TP/(TP+FN), F1 = 2*Precision*Recall/(Precision+Recall). Measures the accuracy of binary state detection. An F1 of 1.0 means perfect detection of on/off states. Commonly applied per-appliance. Mean Absolute Error (MAE): MAE = (1/T) * sum_t |y_hat(t) - y(t)|, where y_hat(t) is the estimated power and y(t) is the true power of an appliance at time t, and T is the number of time steps. Measured in watts. Captures the average magnitude of power estimation errors. Lower is better. Does not distinguish between over- and under-estimation. Signal Aggregate Error (SAE): SAE = |sum_t y_hat(t) - sum_t y(t)| / sum_t y(t). A dimensionless ratio measuring the error in total energy estimation over the entire period. SAE = 0 means the total estimated energy perfectly matches the true total, even if the instantaneous estimates are wrong. Important for billing and energy auditing applications where total consumption accuracy matters more than instantaneous accuracy. Normalized Disaggregation Error (NDE): NDE = sum_t (y_hat(t) - y(t))^2 / sum_t y(t)^2. A dimensionless metric that normalizes the sum of squared errors by the total signal energy. Penalizes large instantaneous errors more heavily than MAE. Lower is better. Useful for comparing disaggregation quality across appliances with different power levels.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "nilm_L1_005",
+      "category": "NILM",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "What are the minimum sampling rate requirements for different NILM approaches? Specifically, discuss what sampling rates are needed for (a) event detection based on step changes, (b) steady-state feature extraction, and (c) transient-based appliance identification. Why does sampling rate matter for disaggregation accuracy?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(a) Event detection based on step changes: Minimum ~1 Hz (1 sample per second) is sufficient for detecting on/off transitions of most household appliances, since appliance switching events typically last 0.5-2 seconds. At 1 Hz, a step change of 100W+ is clearly visible. Many practical NILM systems (e.g., those using smart meter data) operate at 1/15 Hz (one reading every 15 seconds) or even 1/60 Hz (one per minute), which can still detect large appliances (>500W) but misses shorter events and simultaneous switching. (b) Steady-state feature extraction: ~1/60 Hz to 1 Hz is typically sufficient. Steady-state features include average real power, reactive power, and power factor during stable operating periods. Smart meters reporting at 15-minute intervals can still provide useful steady-state features for major appliances, though temporal resolution limits the ability to separate appliances with overlapping operation. (c) Transient-based appliance identification: Requires ~1 kHz to 1 MHz sampling. Startup transients (inrush currents, motor ramp-ups, electronic switch-on patterns) contain unique signatures in the sub-second domain. Capturing current waveform shape, harmonic content, and transient envelope requires at least kHz-range sampling. High-frequency approaches (e.g., EMI-based NILM) use MHz sampling to capture switching noise from power electronics. Sampling rate matters because higher rates capture more distinctive features per appliance, reducing ambiguity. At low sampling rates, many appliances appear as simple step changes of similar magnitude, making them indistinguishable. Higher rates reveal unique transient signatures, harmonic content, and waveform shapes that serve as fingerprints for individual appliances.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    }
+  ]
+}

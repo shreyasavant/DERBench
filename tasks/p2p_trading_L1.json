@@ -1,0 +1,118 @@
+{
+  "metadata": {
+    "category": "P2P Energy Trading",
+    "tier": "L1",
+    "source_platforms": [
+      {
+        "name": "Tushar et al. 2020 - P2P Trading Survey",
+        "url": "https://doi.org/10.1109/TSG.2020.2969657",
+        "type": "survey_paper"
+      },
+      {
+        "name": "Mengelkamp et al. 2018 - Brooklyn Microgrid",
+        "url": "https://doi.org/10.1016/j.apenergy.2017.09.033",
+        "type": "case_study"
+      },
+      {
+        "name": "Grid Singularity GSy-E (D3A)",
+        "url": "https://github.com/gridsingularity/gsy-e",
+        "type": "simulation_platform"
+      }
+    ],
+    "ground_truth_references": [
+      "Tushar et al. taxonomy of full P2P, community-based, and hybrid market structures",
+      "Standard double auction clearing mechanism from microeconomics literature",
+      "Mengelkamp et al. Brooklyn Microgrid real-world P2P implementation"
+    ],
+    "de_biasing_applied": [
+      "Concepts tested through scenario application, not definition recall"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "p2p_trading_L1_001",
+      "category": "P2P Energy Trading",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Define the double auction mechanism as used in local energy markets. Explain how the market clears: how are buy and sell orders matched, and how is the clearing price determined?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "A double auction is a market mechanism where multiple buyers submit bid prices (willingness to pay per kWh) and multiple sellers submit ask prices (minimum acceptable price per kWh). Buy orders are sorted in descending price order to form the demand curve; sell orders are sorted in ascending price order to form the supply curve. The market clears at the intersection of these two curves: the clearing price is the price at which cumulative supply equals cumulative demand. All buyers who bid at or above the clearing price and all sellers who asked at or below the clearing price are matched. Energy is allocated so that total matched supply equals total matched demand. The clearing price ensures individual rationality: no buyer pays more than their bid, and no seller receives less than their ask.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "p2p_trading_L1_002",
+      "category": "P2P Energy Trading",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Explain the differences between feed-in tariff (FiT), net metering, and net billing as compensation mechanisms for distributed generation. How does each affect a prosumer's economic incentive to export energy?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "Feed-in Tariff (FiT): The utility pays a fixed, government-set rate (e.g., $0.12/kWh) for every kWh exported to the grid, independent of the retail electricity rate. This provides a guaranteed revenue stream but the FiT rate is often lower than retail price, so self-consumption may still be preferred. Net Metering: Exported kWh are credited 1:1 against consumed kWh at the full retail rate (e.g., $0.15/kWh). The meter effectively runs backward. The prosumer only pays for net consumption at the end of the billing period. This provides the strongest export incentive since exports offset consumption at full retail value. Net Billing: Exported energy is compensated at a separate (usually lower) rate than the retail rate, and credits are applied in monetary terms rather than kWh. For example, exports may be credited at the wholesale rate ($0.05/kWh) while imports cost $0.15/kWh. This creates a strong incentive for self-consumption since the export value is significantly less than import cost.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "p2p_trading_L1_003",
+      "category": "P2P Energy Trading",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Define 'prosumer' and 'consumer' in the context of peer-to-peer (P2P) energy trading. What role does each play in the market, and what assets does a prosumer typically possess?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "A consumer is a participant who only purchases electricity from the grid or from peers; they have no distributed generation or storage and always appear on the demand side of the market. A prosumer (producer + consumer) is a participant who both produces and consumes electricity, typically owning distributed energy resources such as rooftop solar PV (e.g., 3-10 kW residential), battery energy storage systems (e.g., 5-13.5 kWh like Tesla Powerwall), or small wind turbines. In P2P trading, a prosumer can switch roles dynamically: when generation exceeds local consumption, the prosumer becomes a seller offering surplus energy to peers; when consumption exceeds generation, the prosumer acts as a buyer. This dual role is what distinguishes P2P markets from traditional unidirectional utility supply.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "p2p_trading_L1_004",
+      "category": "P2P Energy Trading",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "What does 'social welfare maximization' mean as a market objective in P2P energy trading? How is social welfare typically computed in this context?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "Social welfare in a P2P energy market is the total economic surplus generated by trade, defined as the sum of consumer surplus and producer surplus. Consumer surplus is the difference between each buyer's willingness to pay (bid price) and the price actually paid, summed over all matched buyers. Producer surplus is the difference between the price received and each seller's marginal cost of production (ask price), summed over all matched sellers. Mathematically: SW = sum_i(bid_i - p*) * q_i + sum_j(p* - ask_j) * q_j, where p* is the clearing price and q_i, q_j are traded quantities. A market mechanism that maximizes social welfare allocates energy to buyers who value it most and sources it from sellers with lowest costs. The double auction achieves this under standard assumptions. Social welfare maximization is often used as a benchmark to evaluate alternative market designs (e.g., comparing uniform pricing vs. discriminatory pricing).",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "p2p_trading_L1_005",
+      "category": "P2P Energy Trading",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "According to the taxonomy by Tushar et al., what are the three main P2P energy trading market structures? Briefly describe each and give one advantage and one disadvantage of each structure.",
+      "context": {},
+      "tools": [],
+      "ground_truth": "Tushar et al. identify three market structures: (1) Full P2P: Peers negotiate and trade directly with each other without any central entity. Each prosumer autonomously sets prices and selects trading partners through bilateral or multilateral contracts. Advantage: Maximum autonomy and no single point of failure. Disadvantage: High communication overhead and scalability challenges as the number of peers grows (O(n^2) negotiations). (2) Community-based: Peers within a defined community (e.g., a microgrid or neighborhood) trade through a community manager or aggregator that coordinates internal trades. The community may interact with the grid as a single entity. Advantage: Reduced complexity compared to full P2P; the community manager can optimize collective welfare. Disadvantage: Requires trust in the community manager; may limit trading opportunities to within-community peers. (3) Hybrid: Combines elements of both full P2P and community-based approaches. Peers trade within their community via a manager, but can also engage in inter-community or direct P2P trades when beneficial. Advantage: Balances scalability with trading flexibility. Disadvantage: More complex coordination and governance rules are needed to manage both intra- and inter-community trades.",
+      "metrics": [
+        "correctness"
+      ],
+      "scoring": "binary"
+    }
+  ]
+}

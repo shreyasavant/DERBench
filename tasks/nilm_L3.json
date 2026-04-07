@@ -1,0 +1,136 @@
+{
+  "metadata": {
+    "category": "NILM",
+    "tier": "L3",
+    "source_platforms": [
+      {
+        "name": "REDD Dataset",
+        "url": "https://www.kaggle.com/datasets/pawelkauf/redd-part",
+        "type": "open_dataset"
+      },
+      {
+        "name": "UK-DALE Dataset",
+        "url": "https://jack-kelly.com/data/",
+        "type": "open_dataset",
+        "writeup": "Kelly & Knottenbelt, Scientific Data, 2015"
+      },
+      {
+        "name": "NILMTK (CO and FHMM implementations)",
+        "url": "https://github.com/nilmtk/nilmtk",
+        "type": "toolkit",
+        "writeup": "Batra et al. e-Energy 2014 -- published baselines"
+      },
+      {
+        "name": "Pecan Street Dataport",
+        "url": "https://www.pecanstreet.org/dataport/",
+        "type": "open_dataset"
+      }
+    ],
+    "ground_truth_references": [
+      "Event-based NILM: EV charger F1 > 0.95 (large distinctive signature), refrigerator F1 > 0.80",
+      "CO disaggregation: brute-force over 72 state combinations per timestep is tractable",
+      "NILMTK published baseline CO results for validation comparison"
+    ],
+    "de_biasing_applied": [
+      "Code execution: correctness verified by F1/MAE metrics on synthetic data with known ground truth",
+      "Synthetic data generated within the script prevents training data leakage",
+      "Analysis section tests understanding of algorithmic limitations, not recall"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "nilm_L3_001",
+      "category": "NILM",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "execution_tool_use"
+      ],
+      "prompt": "Write a simple event-based NILM algorithm in Python. The algorithm should:\n\n1. Load an aggregate power signal from a CSV file (path provided as variable `csv_path`). The CSV has two columns: `timestamp` (seconds from midnight) and `power_w` (aggregate power in watts), sampled at 1 Hz over 24 hours (86,400 samples).\n\n2. Detect step changes (events) using edge detection:\n   - Compute the first-order difference of the power signal.\n   - Identify events where |difference| > 50 W (threshold).\n   - Record each event's timestamp, magnitude (signed), and direction (up/down).\n\n3. Pair events: match each ON event (positive step) with the nearest subsequent OFF event (negative step) of similar magnitude (within 20% tolerance).\n\n4. Cluster paired events by magnitude using k-means (k=5, representing 5 appliances) with these expected signatures:\n   - Refrigerator: ~150 W\n   - Microwave: ~1200 W\n   - EV charger: ~7200 W\n   - Dishwasher: ~1800 W\n   - Heat pump: ~3500 W\n\n5. Assign appliance labels based on cluster centroids closest to expected signatures.\n\n6. Reconstruct per-appliance power time series from paired events.\n\n7. If a ground truth CSV is available (path as variable `ground_truth_path`, columns: `timestamp`, `refrigerator`, `microwave`, `ev_charger`, `dishwasher`, `heat_pump` in watts), compute per-appliance F1 score (on/off detection, threshold > 25 W = ON) and MAE.\n\nFor testing, also generate synthetic data: create a 24-hour aggregate signal with known appliance activations:\n- Refrigerator: 150 W, on 35 min / off 25 min cycling, starting at t=0\n- Microwave: 1200 W, on at 07:30 for 5 min, on at 12:15 for 8 min, on at 18:45 for 3 min\n- EV charger: 7200 W, on at 22:00 for 4 hours (wrapping to 02:00)\n- Dishwasher: 1800 W, on at 20:00 for 90 min\n- Heat pump: 3500 W, on at 06:00-09:00, on at 16:00-21:00\n- Add Gaussian noise with std=15 W\n\nGenerate the synthetic data, run the disaggregation, and report F1 and MAE per appliance. Provide the complete, runnable script.",
+      "context": {
+        "sampling_rate_hz": 1,
+        "duration_hours": 24,
+        "event_threshold_W": 50,
+        "pairing_tolerance": 0.2,
+        "num_clusters": 5,
+        "expected_signatures_W": {
+          "refrigerator": 150,
+          "microwave": 1200,
+          "ev_charger": 7200,
+          "dishwasher": 1800,
+          "heat_pump": 3500
+        },
+        "on_off_threshold_W": 25,
+        "noise_std_W": 15
+      },
+      "tools": [
+        "execute_python"
+      ],
+      "ground_truth": "The algorithm should achieve: Refrigerator F1 > 0.80 (periodic cycling is well-detected but short off-periods may cause some missed events). Microwave F1 > 0.85 (distinctive high-power, short-duration events are easy to detect). EV charger F1 > 0.95 (very large step change, long duration, easy to detect). Dishwasher F1 > 0.85 (single large step, long duration). Heat pump F1 > 0.90 (large step, long duration). MAE should be low for high-power appliances (<100 W for EV charger, <50 W for heat pump) and higher relative to magnitude for low-power appliances (refrigerator MAE ~30-50 W). The main failure modes are: (1) simultaneous events being merged, (2) pairing errors when multiple appliances of similar magnitude exist, (3) noise-induced false events near the threshold. The code must generate synthetic data, run disaggregation, and print metrics.",
+      "metrics": [
+        "code_correctness",
+        "f1_scores",
+        "algorithm_design",
+        "code_quality"
+      ],
+      "scoring": "execution_based"
+    },
+    {
+      "task_id": "nilm_L3_002",
+      "category": "NILM",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "execution_tool_use"
+      ],
+      "prompt": "Implement a Combinatorial Optimization (CO) based NILM disaggregator in Python. The algorithm should:\n\n1. Accept:\n   - An aggregate power time series (numpy array, 1-minute resolution, 1440 time steps for 24 hours)\n   - A dictionary of appliance power states:\n     * Refrigerator: [0, 150] W (OFF, ON)\n     * Microwave: [0, 1200] W (OFF, ON)\n     * EV Charger: [0, 7200] W (OFF, ON)\n     * Dishwasher: [0, 600, 1800] W (OFF, LOW, HIGH)\n     * Heat Pump: [0, 1500, 3500] W (OFF, LOW, HIGH)\n\n2. At each time step, find the combination of appliance states that minimizes:\n   residual = |aggregate(t) - sum of selected appliance states|^2\n   This is a brute-force search over all state combinations.\n\n3. Compute total combinations per time step: 2 * 2 * 2 * 3 * 3 = 72 (tractable).\n\n4. Output: per-appliance estimated power time series (1440 x 5 array).\n\n5. Generate synthetic test data:\n   - Refrigerator: 150 W, cycling 35 min on / 25 min off\n   - Microwave: 1200 W, on at minutes 450-455, 735-743, 1125-1128\n   - EV charger: 7200 W, on from minute 1320 to end (1440), wrapping not needed\n   - Dishwasher: 600 W (LOW) at minutes 1200-1230, then 1800 W (HIGH) at minutes 1230-1290\n   - Heat pump: 3500 W (HIGH) at minutes 360-540, 1500 W (LOW) at minutes 540-600, 3500 W at minutes 960-1200, 1500 W at 1200-1260\n   - Base unknown load: 200 W constant\n   - Gaussian noise: std=20 W\n\n6. Run the CO disaggregator on the synthetic aggregate.\n\n7. Compare against ground truth:\n   - Per-appliance F1 score (threshold: state > 0 = ON for 2-state, any non-zero state = ON for 3-state)\n   - Per-appliance MAE (watts)\n   - Per-appliance SAE (total energy error ratio)\n   - Overall residual: mean |aggregate - sum of estimates|\n\n8. Discussion: After printing metrics, print a brief analysis of which appliances are well-disaggregated and which are not, and why CO struggles with certain patterns.\n\nProvide the complete runnable script.",
+      "context": {
+        "resolution_minutes": 1,
+        "num_timesteps": 1440,
+        "appliance_states": {
+          "refrigerator": [
+            0,
+            150
+          ],
+          "microwave": [
+            0,
+            1200
+          ],
+          "ev_charger": [
+            0,
+            7200
+          ],
+          "dishwasher": [
+            0,
+            600,
+            1800
+          ],
+          "heat_pump": [
+            0,
+            1500,
+            3500
+          ]
+        },
+        "base_load_W": 200,
+        "noise_std_W": 20
+      },
+      "tools": [
+        "execute_python"
+      ],
+      "ground_truth": "Expected results: (1) EV charger: F1 ~1.0, MAE <50 W, SAE <2%. Its 7200 W signature is unambiguous and far from any combination of other appliances. (2) Heat pump HIGH state: F1 >0.95, MAE <100 W. The 3500 W state is also distinctive. However, the LOW state (1500 W) may be confused with combinations like refrigerator (150) + microwave (1200) = 1350 W, causing some errors. (3) Microwave: F1 >0.85, MAE <30 W. Short duration makes it sensitive to noise near boundaries but the 1200 W signature is fairly unique. (4) Dishwasher: F1 ~0.80-0.90. The HIGH state (1800 W) may be confused with heat_pump LOW (1500) + other combinations. The LOW state (600 W) is the most ambiguous. (5) Refrigerator: F1 ~0.70-0.85. The 150 W signature is the hardest because it is small relative to noise and can be absorbed into residual error. Overall residual should be close to the noise level (~20 W mean) when disaggregation is accurate. CO's main weakness is that it treats each time step independently -- it does not enforce temporal consistency, so it may rapidly switch states between time steps due to noise. This particularly hurts the refrigerator (false transitions) and dishwasher LOW state (confusion with noise fluctuations).",
+      "metrics": [
+        "code_correctness",
+        "f1_scores",
+        "mae_accuracy",
+        "residual_analysis",
+        "discussion_quality",
+        "code_quality"
+      ],
+      "scoring": "execution_based"
+    }
+  ]
+}

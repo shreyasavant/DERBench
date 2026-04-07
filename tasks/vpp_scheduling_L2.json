@@ -1,0 +1,247 @@
+{
+  "metadata": {
+    "category": "VPP Scheduling",
+    "tier": "L2",
+    "source_platforms": [
+      {
+        "name": "CAISO Day-Ahead Market Data",
+        "url": "https://www.caiso.com/market-operations",
+        "type": "market_data"
+      },
+      {
+        "name": "PJM Regulation Market Data",
+        "url": "https://dataminer2.pjm.com/",
+        "type": "market_data"
+      },
+      {
+        "name": "ACN-Data (Caltech EV Charging)",
+        "url": "https://ev.caltech.edu/dataset",
+        "type": "open_dataset",
+        "writeup": "Lee et al., ACN-Data: Analysis and Applications, e-Energy 2019"
+      },
+      {
+        "name": "Xu et al. 2018 - Battery Regulation Markets",
+        "url": "https://doi.org/10.1109/TPWRS.2018.2846774",
+        "type": "research_paper"
+      }
+    ],
+    "ground_truth_references": [
+      "Battery arbitrage: charge at lowest prices, discharge at highest, net of efficiency losses",
+      "EV fleet scheduling: LP-optimal load leveling with deadline constraints",
+      "Multi-market allocation: compare marginal revenue from energy vs regulation"
+    ],
+    "de_biasing_applied": [
+      "Price profiles derived from real CAISO/PJM patterns but not exact dates",
+      "EV scheduling requires constructing feasible schedule, not recalling heuristics",
+      "Multi-market task has no single 'correct' allocation -- evaluation on reasoning quality"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "vpp_scheduling_L2_001",
+      "category": "VPP Scheduling",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "multi_objective"
+      ],
+      "prompt": "A VPP operates a 200 kW solar PV array and a 500 kWh / 250 kW BESS with 90% round-trip efficiency (94.87% one-way) and SOC limits of 20-80% (usable: 300 kWh). The battery starts at 50% SOC (250 kWh stored, 150 kWh usable above minimum).\n\nDay-ahead energy prices ($/MWh) for the next 24 hours:\n\nHour | Price | Solar (kW)\n-----|-------|----------\n0    | 25    | 0\n1    | 22    | 0\n2    | 20    | 0\n3    | 18    | 0\n4    | 20    | 0\n5    | 28    | 0\n6    | 35    | 20\n7    | 45    | 60\n8    | 55    | 120\n9    | 50    | 170\n10   | 45    | 195\n11   | 42    | 200\n12   | 40    | 200\n13   | 42    | 190\n14   | 48    | 165\n15   | 58    | 120\n16   | 72    | 60\n17   | 85    | 20\n18   | 95    | 0\n19   | 88    | 0\n20   | 70    | 0\n21   | 55    | 0\n22   | 40    | 0\n23   | 30    | 0\n\nDetermine the optimal charge/discharge schedule to maximize daily revenue. For each hour, specify: charge (kW), discharge (kW), grid export from solar (kW), and resulting SOC. Calculate total daily revenue.",
+      "context": {
+        "solar_capacity_kW": 200,
+        "bess_energy_kWh": 500,
+        "bess_power_kW": 250,
+        "round_trip_efficiency": 0.9,
+        "soc_min": 0.2,
+        "soc_max": 0.8,
+        "soc_initial": 0.5,
+        "prices_per_MWh": [
+          25,
+          22,
+          20,
+          18,
+          20,
+          28,
+          35,
+          45,
+          55,
+          50,
+          45,
+          42,
+          40,
+          42,
+          48,
+          58,
+          72,
+          85,
+          95,
+          88,
+          70,
+          55,
+          40,
+          30
+        ],
+        "solar_kW": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          20,
+          60,
+          120,
+          170,
+          195,
+          200,
+          200,
+          190,
+          165,
+          120,
+          60,
+          20,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "tools": [],
+      "ground_truth": "Optimal strategy: charge battery during cheapest hours (2-4 AM at $18-20/MWh) and discharge during most expensive hours (17-19 at $85-95/MWh). Solar energy is sold whenever produced. Charging phase: Hours 2-4 (prices $18-20/MWh): Charge at 250 kW for ~1.2 hours equivalent to fill from 150 kWh usable to 300 kWh. Actually charge at 250 kW during hours 2, 3 (cheapest). After efficiency: 250 * 0.9487 = 237.2 kWh stored per hour. Hour 2: charge 250 kW, SOC goes from 250 to 487.2 kWh (limited to 400 kWh = 80%). So charge 150/0.9487 = 158.1 kW equivalent in ~0.63 hours. Better: charge 250 kW at hour 3 ($18): stores 237.2 kWh, SOC from 250 to min(400, 487.2) = 400 kWh. That uses 158.2 kWh of usable headroom at 250 kW over 0.63 hours. Simplified: Charge fully at hour 3-4 at $18-20/MWh. Cost to charge 150 kWh usable: need 150/0.9487 = 158.1 kWh from grid at ~$19/MWh average = $3.00. Discharge phase: Hours 17-19 (prices $85-95/MWh): Discharge 300 kWh usable at 250 kW over ~1.2 hours. Revenue from discharge: 300 * 0.9487 = 284.6 kWh delivered * ~$90/MWh avg = $25.61. Solar revenue: Total solar generation = sum of hourly values = ~1,520 kWh. Revenue from solar: sum(solar_kW * price/1000) for each hour. Approximate solar revenue: ~$70-75. Battery arbitrage net revenue: ~$25.61 - $3.00 = ~$22.61. Total daily revenue: ~$93-97.",
+      "metrics": [
+        "schedule_optimality",
+        "revenue_calculation",
+        "constraint_satisfaction",
+        "reasoning_quality"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "vpp_scheduling_L2_002",
+      "category": "VPP Scheduling",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "multi_objective"
+      ],
+      "prompt": "A fleet of 50 EVs is managed by a VPP for smart charging at a workplace parking facility with a 500 kW grid connection limit. Each EV has a 60 kWh battery and charges at either 7.2 kW (L2) or 11 kW (L2 fast). The following representative groups arrive and depart:\n\nGroup | Count | Arrival | Departure | SOC_arrival | SOC_target | Charger\n------|-------|---------|-----------|-------------|------------|--------\nA     | 20    | 07:00   | 17:00     | 30%         | 80%        | 7.2 kW\nB     | 15    | 08:00   | 16:00     | 40%         | 90%        | 7.2 kW\nC     | 10    | 09:00   | 18:00     | 20%         | 80%        | 11 kW\nD     | 5     | 07:00   | 12:00     | 50%         | 80%        | 11 kW\n\nSchedule charging to minimize peak demand (max kW drawn in any hour) while ensuring all EVs meet their SOC targets by departure. What is the minimum achievable peak demand? Show the hourly charging schedule per group.",
+      "context": {
+        "grid_connection_kW": 500,
+        "ev_battery_kWh": 60,
+        "groups": [
+          {
+            "id": "A",
+            "count": 20,
+            "arrival": 7,
+            "departure": 17,
+            "soc_arrival": 0.3,
+            "soc_target": 0.8,
+            "charger_kW": 7.2
+          },
+          {
+            "id": "B",
+            "count": 15,
+            "arrival": 8,
+            "departure": 16,
+            "soc_arrival": 0.4,
+            "soc_target": 0.9,
+            "charger_kW": 7.2
+          },
+          {
+            "id": "C",
+            "count": 10,
+            "arrival": 9,
+            "departure": 18,
+            "soc_arrival": 0.2,
+            "soc_target": 0.8,
+            "charger_kW": 11.0
+          },
+          {
+            "id": "D",
+            "count": 5,
+            "arrival": 7,
+            "departure": 12,
+            "soc_arrival": 0.5,
+            "soc_target": 0.8,
+            "charger_kW": 11.0
+          }
+        ]
+      },
+      "tools": [],
+      "ground_truth": "Total energy required: Group A: 20 * 60 * (0.80-0.30) = 600 kWh over 10 hours. Group B: 15 * 60 * (0.90-0.40) = 450 kWh over 8 hours. Group C: 10 * 60 * (0.80-0.20) = 360 kWh over 9 hours. Group D: 5 * 60 * (0.80-0.50) = 90 kWh over 5 hours. Total: 1,500 kWh. Maximum charger power: Group A max = 20 * 7.2 = 144 kW. Group B max = 15 * 7.2 = 108 kW. Group C max = 10 * 11 = 110 kW. Group D max = 5 * 11 = 55 kW. The busiest window is 09:00-12:00 when all groups are present, with max possible demand of 144 + 108 + 110 + 55 = 417 kW. Minimum peak demand via load leveling: The total period spans 07:00-18:00 (11 hours). However, not all groups are present all hours. The minimum achievable peak is found by distributing energy as evenly as possible. Group D is the tightest constraint: 90 kWh in 5 hours = 18 kW average (well within 55 kW max). Ideal flat load = 1500 kWh / 11 hours ~ 136.4 kW, but this is not achievable because some hours have fewer EVs. The practical minimum peak, accounting for availability windows and charger limits, is approximately 150-170 kW. Group D should charge at minimal rate (~18 kW = 3.6 kW per EV). Groups A and B should spread charging across their full windows. Group C should charge steadily at ~40 kW (4 kW per EV). The minimum peak is constrained by hours 08:00-09:00 and 16:00-17:00 where fewer groups overlap but remaining groups must increase their rates.",
+      "metrics": [
+        "peak_demand_minimization",
+        "feasibility_check",
+        "schedule_quality",
+        "reasoning_quality"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "vpp_scheduling_L2_003",
+      "category": "VPP Scheduling",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "multi_objective"
+      ],
+      "prompt": "A VPP manages a portfolio with 300 kW solar, 1 MWh/500 kW BESS (92% round-trip efficiency), and 200 kW of curtailable industrial load. The VPP can participate in two markets:\n\n1. Day-ahead energy market: prices below ($/MWh)\n2. Frequency regulation market: capacity payment of $15/MW per hour for regulation-up and $12/MW per hour for regulation-down. If called upon, the BESS must deliver the committed capacity for up to 15 minutes per hour. Expected utilization rate: 20%.\n\nDay-ahead prices ($/MWh): [30, 25, 22, 20, 22, 30, 42, 55, 65, 58, 50, 45, 42, 45, 52, 65, 80, 95, 90, 75, 58, 45, 35, 28]\n\nBattery degradation cost: $0.02/kWh throughput (charge + discharge).\n\nThe BESS starts at 50% SOC. Determine the optimal allocation of BESS capacity between the energy market (arbitrage) and the frequency regulation market for each hour. Consider that capacity committed to regulation is unavailable for energy arbitrage. Which market allocation maximizes total daily profit?",
+      "context": {
+        "solar_kW": 300,
+        "bess_energy_kWh": 1000,
+        "bess_power_kW": 500,
+        "round_trip_efficiency": 0.92,
+        "soc_initial": 0.5,
+        "soc_min": 0.1,
+        "soc_max": 0.9,
+        "curtailable_load_kW": 200,
+        "reg_up_price_per_MW_hr": 15,
+        "reg_down_price_per_MW_hr": 12,
+        "reg_utilization_rate": 0.2,
+        "degradation_cost_per_kWh": 0.02,
+        "energy_prices_per_MWh": [
+          30,
+          25,
+          22,
+          20,
+          22,
+          30,
+          42,
+          55,
+          65,
+          58,
+          50,
+          45,
+          42,
+          45,
+          52,
+          65,
+          80,
+          95,
+          90,
+          75,
+          58,
+          45,
+          35,
+          28
+        ]
+      },
+      "tools": [],
+      "ground_truth": "The decision depends on comparing marginal revenue from each market. Regulation revenue per kW committed: Reg-up: $15/MW/hr = $0.015/kW/hr capacity payment + expected energy payment (20% utilization * price/1000 * 0.25hr). Reg-down: $12/MW/hr = $0.012/kW/hr capacity payment. Arbitrage revenue per kW: Charge during hours 2-4 ($20-22/MWh), discharge during hours 17-18 ($90-95/MWh). Spread: ~$73/MWh. Net after efficiency: $73 * 0.92 = $67.2/MWh, minus degradation: $67.2 - $40 (degradation on 2 kWh throughput per kWh arbitraged) = actually $67.2/MWh - $0.02*2*1000 = wrong units. Per kWh arbitraged: revenue = ($0.095 - $0.020) * 0.9592 - $0.02*2 = $0.072 * 0.96 - $0.04 = $0.029/kWh net. Regulation: 500 kW committed to reg-up = 0.5 MW * $15/hr = $7.50/hr capacity payment. Over 24 hours if fully committed: $180. Plus energy from utilization. Optimal split: Use BESS for arbitrage during hours with largest price spreads (charge hours 2-4, discharge hours 17-19), and commit remaining/idle capacity to regulation during other hours. During non-arbitrage hours (roughly 16 of 24), commit full 500 kW to regulation: 16 * $7.50 = $120 from reg-up capacity payments alone. During arbitrage hours (8 hours for charge + discharge), commit 0 kW to regulation. Arbitrage profit: charge 400 kWh at $20/MWh ($8), discharge 368 kWh at $93/MWh ($34.2), degradation cost: 800 kWh * $0.02 = $16. Net arbitrage: $34.2 - $8 - $16 = $10.2. Total estimated daily profit: ~$130-150 from regulation + ~$10-25 from arbitrage + solar revenue.",
+      "metrics": [
+        "market_allocation_quality",
+        "profit_calculation",
+        "degradation_accounting",
+        "reasoning_quality"
+      ],
+      "scoring": "rubric"
+    }
+  ]
+}

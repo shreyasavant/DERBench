@@ -1,0 +1,222 @@
+{
+  "metadata": {
+    "category": "VPP Scheduling",
+    "tier": "L3",
+    "source_platforms": [
+      {
+        "name": "CAISO/PJM Market Data",
+        "url": "https://www.caiso.com/market-operations",
+        "type": "market_data"
+      },
+      {
+        "name": "Morales et al. textbook",
+        "url": "https://doi.org/10.1007/978-1-4614-9411-9",
+        "type": "textbook",
+        "writeup": "GAMS code for stochastic VPP scheduling with documented optimal solutions"
+      },
+      {
+        "name": "Pyomo Optimization Framework",
+        "url": "https://pyomo.readthedocs.io/",
+        "type": "software_tool"
+      },
+      {
+        "name": "NREL ReOpt",
+        "url": "https://reopt.nrel.gov/",
+        "type": "optimization_tool"
+      }
+    ],
+    "ground_truth_references": [
+      "LP/MILP optimal dispatch verified by solver output (not memorized)",
+      "Rolling-horizon vs perfect-foresight: forecast uncertainty cost typically 3-15%",
+      "NREL ReOpt API provides independent validation of DER dispatch solutions"
+    ],
+    "de_biasing_applied": [
+      "Code execution: optimization correctness verified by constraint satisfaction and objective value",
+      "No specific solver mandated -- scipy, pyomo, or cvxpy all acceptable"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "vpp_scheduling_L3_001",
+      "category": "VPP Scheduling",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "execution_tool_use",
+        "multi_objective"
+      ],
+      "prompt": "Formulate and solve a 24-hour VPP dispatch optimization problem in Python. The VPP comprises:\n\n- Solar PV: 300 kW capacity. Hourly capacity factors: [0, 0, 0, 0, 0, 0, 0.08, 0.25, 0.55, 0.78, 0.92, 0.97, 1.0, 0.95, 0.82, 0.60, 0.30, 0.10, 0, 0, 0, 0, 0, 0]\n- BESS: 1000 kWh capacity, 500 kW max charge/discharge rate, 92% round-trip efficiency (95.9% one-way), SOC limits 10%-90%, initial SOC 50%.\n- Flexible loads: 200 kW baseline, can curtail up to 80 kW (min 120 kW), curtailment cost $0.05/kWh.\n- Non-flexible loads: 150 kW constant.\n\nDay-ahead prices ($/MWh): [30, 25, 22, 20, 22, 30, 42, 55, 65, 58, 50, 45, 42, 45, 52, 65, 80, 95, 90, 75, 58, 45, 35, 28]\n\nObjective: Minimize total daily cost (grid purchases - grid sales + curtailment cost + battery degradation at $0.015/kWh throughput).\n\nConstraints:\n1. Power balance: solar + grid_import + bess_discharge = load + grid_export + bess_charge, each hour\n2. SOC dynamics with efficiency losses\n3. SOC bounds (10-90%)\n4. BESS power limits (0-500 kW charge and discharge, not simultaneous)\n5. Flexible load bounds (120-200 kW)\n6. Grid import/export non-negative\n7. Terminal SOC >= 40%\n8. BESS ramp rate: max 250 kW change per hour in charge/discharge power\n\nUse scipy.optimize.linprog or scipy.optimize.minimize (or pyomo if available) to solve. Print the optimal schedule (hourly table), total cost, and breakdown by component.",
+      "context": {
+        "solar_capacity_kW": 300,
+        "solar_cf": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0.08,
+          0.25,
+          0.55,
+          0.78,
+          0.92,
+          0.97,
+          1.0,
+          0.95,
+          0.82,
+          0.6,
+          0.3,
+          0.1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "bess_energy_kWh": 1000,
+        "bess_power_kW": 500,
+        "bess_efficiency_one_way": 0.959,
+        "soc_min": 0.1,
+        "soc_max": 0.9,
+        "soc_initial": 0.5,
+        "soc_terminal_min": 0.4,
+        "bess_ramp_kW_per_hr": 250,
+        "degradation_cost": 0.015,
+        "flexible_load_base_kW": 200,
+        "flexible_load_min_kW": 120,
+        "curtailment_cost": 0.05,
+        "non_flexible_load_kW": 150,
+        "prices_per_MWh": [
+          30,
+          25,
+          22,
+          20,
+          22,
+          30,
+          42,
+          55,
+          65,
+          58,
+          50,
+          45,
+          42,
+          45,
+          52,
+          65,
+          80,
+          95,
+          90,
+          75,
+          58,
+          45,
+          35,
+          28
+        ]
+      },
+      "tools": [
+        "execute_python",
+        "run_powerflow"
+      ],
+      "ground_truth": "The optimal solution should: (1) Charge BESS during hours 2-5 (cheapest prices $20-30/MWh). (2) Discharge BESS during hours 16-19 (highest prices $80-95/MWh), respecting ramp constraints. (3) Curtail flexible loads during peak price hours to reduce grid purchases. (4) Export excess solar during midday hours. (5) Total cost should be negative (net revenue) in the range of -$50 to -$100 per day, driven by solar revenue and BESS arbitrage. (6) All constraints must be satisfied, verified by printing constraint violations. The code must be self-contained and executable.",
+      "metrics": [
+        "code_correctness",
+        "optimization_formulation",
+        "constraint_satisfaction",
+        "solution_quality",
+        "code_quality"
+      ],
+      "scoring": "execution_based"
+    },
+    {
+      "task_id": "vpp_scheduling_L3_002",
+      "category": "VPP Scheduling",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "execution_tool_use",
+        "multi_objective"
+      ],
+      "prompt": "Implement a rolling-horizon VPP dispatch in Python that re-optimizes every 4 hours with updated solar forecasts. Compare against a perfect-foresight benchmark.\n\nVPP assets:\n- Solar: 500 kW capacity\n- BESS: 2 MWh / 500 kW, 90% round-trip efficiency, SOC limits 10-90%, initial SOC 50%\n- Base load: 300 kW constant\n\nTrue solar generation (kW, hourly, hours 0-23):\n[0, 0, 0, 0, 0, 0, 40, 125, 275, 390, 460, 485, 500, 475, 410, 300, 150, 50, 0, 0, 0, 0, 0, 0]\n\nForecasted solar at each re-optimization point (contains forecast errors):\n- t=0 forecast (hours 0-23): [0,0,0,0,0,0,50,140,300,400,470,490,500,480,420,310,160,55,0,0,0,0,0,0]\n- t=4 forecast (hours 4-23): [0,0,35,110,250,370,440,480,495,470,400,290,140,45,0,0,0,0,0,0]\n- t=8 forecast (hours 8-23): [280,395,465,488,502,478,415,305,155,52,0,0,0,0,0,0]\n- t=12 forecast (hours 12-23): [498,472,405,295,145,48,0,0,0,0,0,0]\n- t=16 forecast (hours 16-23): [148,48,0,0,0,0,0,0]\n- t=20 forecast (hours 20-23): [0,0,0,0]\n\nDay-ahead prices ($/MWh): [28, 24, 21, 19, 21, 28, 40, 52, 62, 55, 48, 44, 41, 44, 50, 62, 78, 92, 88, 72, 55, 42, 33, 26]\n\nFor each 4-hour window:\n1. Solve a look-ahead optimization over the remaining horizon using the latest forecast.\n2. Fix the first 4 hours of the solution and execute with actual solar values.\n3. Update SOC based on actual dispatch.\n4. Re-optimize from the new state.\n\nAlso solve a single perfect-foresight optimization using the true solar values.\n\nCompare: total cost, total grid imports, total grid exports, and SOC trajectory for both approaches. Print a summary table and quantify the cost of forecast uncertainty (rolling cost minus perfect-foresight cost).",
+      "context": {
+        "solar_capacity_kW": 500,
+        "bess_energy_kWh": 2000,
+        "bess_power_kW": 500,
+        "round_trip_efficiency": 0.9,
+        "soc_min": 0.1,
+        "soc_max": 0.9,
+        "soc_initial": 0.5,
+        "base_load_kW": 300,
+        "true_solar_kW": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          40,
+          125,
+          275,
+          390,
+          460,
+          485,
+          500,
+          475,
+          410,
+          300,
+          150,
+          50,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "prices_per_MWh": [
+          28,
+          24,
+          21,
+          19,
+          21,
+          28,
+          40,
+          52,
+          62,
+          55,
+          48,
+          44,
+          41,
+          44,
+          50,
+          62,
+          78,
+          92,
+          88,
+          72,
+          55,
+          42,
+          33,
+          26
+        ],
+        "reoptimization_interval_hours": 4
+      },
+      "tools": [
+        "execute_python",
+        "run_powerflow"
+      ],
+      "ground_truth": "The perfect-foresight solution achieves lower cost because it optimally schedules BESS charging during low-price hours (2-5 AM) and discharge during peak hours (17-19) with exact knowledge of solar. The rolling-horizon approach incurs additional cost due to forecast errors, particularly: (1) Over-estimating solar at t=0 may lead to under-charging the battery early. (2) Corrections at t=4 and t=8 recover some but not all optimality. The cost of forecast uncertainty should be in the range of 3-15% of perfect-foresight cost, depending on forecast error magnitude. Both approaches should be feasible (all constraints satisfied). The code should clearly separate the optimization solver, the rolling-horizon controller, and the comparison logic.",
+      "metrics": [
+        "code_correctness",
+        "rolling_horizon_implementation",
+        "comparison_accuracy",
+        "code_quality"
+      ],
+      "scoring": "execution_based"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "metadata": {
+    "category": "Cybersecurity",
+    "tier": "L1",
+    "source_platforms": [
+      {
+        "name": "NERC CIP Standards",
+        "url": "https://www.nerc.com/standards/reliability-standards/cip",
+        "type": "regulatory_standard"
+      },
+      {
+        "name": "IEEE 2030.5 (SEP2)",
+        "url": "https://standards.ieee.org/standard/2030_5-2018.html",
+        "type": "communication_standard"
+      },
+      {
+        "name": "NIST SP 800-82 Rev 3",
+        "url": "https://csrc.nist.gov/pubs/sp/800/82/r3/final",
+        "type": "security_framework"
+      },
+      {
+        "name": "MITRE ATT&CK for ICS",
+        "url": "https://attack.mitre.org/matrices/ics/",
+        "type": "threat_framework"
+      },
+      {
+        "name": "Liu, Ning & Reiter 2011",
+        "url": "https://doi.org/10.1145/2046707.2046721",
+        "type": "foundational_paper"
+      }
+    ],
+    "ground_truth_references": [
+      "NERC CIP-002 through CIP-011 standard text",
+      "IEEE 2030.5 security requirements: TLS 1.2, PKI, X.509 certificates",
+      "NIST SP 800-82 IT/OT security distinction",
+      "Liu et al. 2011 FDI attack formulation: a = Hc bypasses chi-squared test"
+    ],
+    "de_biasing_applied": [
+      "Questions require explaining mechanisms and implications, not citing standard section numbers"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "cybersecurity_L1_001",
+      "category": "Cybersecurity",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Describe the scope of NERC CIP standards CIP-002 through CIP-011. For each standard, provide a one-sentence summary of what it covers.",
+      "context": {},
+      "tools": [],
+      "ground_truth": "NERC CIP (Critical Infrastructure Protection) standards: CIP-002 — BES (Bulk Electric System) Cyber System Categorization: requires identification and categorization of all BES Cyber Systems by their impact level (high, medium, low) based on the reliability impact of their associated BES assets. CIP-003 — Security Management Controls: requires documented cybersecurity policies and assignment of a senior manager with overall responsibility for CIP compliance. CIP-004 — Personnel & Training: mandates cybersecurity awareness training, personnel risk assessments (background checks), and access management authorization for individuals with access to BES Cyber Systems. CIP-005 — Electronic Security Perimeters: requires defining Electronic Security Perimeters (ESPs) around BES Cyber Systems and controlling all inbound/outbound network traffic through identified Electronic Access Points (EAPs) with access control lists. CIP-006 — Physical Security of BES Cyber Systems: mandates physical security plans for Physical Security Perimeters (PSPs) around BES Cyber Systems, including access controls, monitoring, and logging. CIP-007 — System Security Management: requires system hardening (ports/services management), security patch management, malicious code prevention, security event monitoring, and system access controls on BES Cyber Systems. CIP-008 — Incident Reporting and Response Planning: requires Cyber Security Incident response plans with procedures for identification, classification, notification (to ES-ISAC within 1 hour for certain incidents), and post-incident review. CIP-009 — Recovery Plans for BES Cyber Systems: mandates recovery plans including backup and restoration procedures, testing of recovery plans, and maintaining backup media. CIP-010 — Configuration Change Management and Vulnerability Assessments: requires configuration baselines, change management processes, and periodic vulnerability assessments (at least every 15 months). CIP-011 — Information Protection: requires methods for identifying, classifying, and protecting BES Cyber System Information (BCSI), including storage, transit, and disposal/reuse procedures.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "cybersecurity_L1_002",
+      "category": "Cybersecurity",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "List and briefly describe four common attack vectors targeting Distributed Energy Resources (DERs). For each, identify the communication protocol or system component exploited and the potential grid impact.",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(1) False Data Injection (FDI): Attacker compromises sensor or telemetry data (power, voltage, frequency measurements) sent via DNP3 or Modbus to the SCADA/DERMS system. The injected false measurements can cause the control system to make erroneous dispatch decisions — e.g., curtailing DER output unnecessarily or failing to detect voltage violations. Grid impact: voltage instability, suboptimal DER dispatch, potential cascading failures if state estimation is corrupted. (2) Man-in-the-Middle (MITM) on Modbus/DNP3: Attacker intercepts and modifies commands between the DERMS/aggregator and field devices. Modbus RTU/TCP and legacy DNP3 (without Secure Authentication v5) transmit in plaintext with no authentication, allowing the attacker to alter setpoints — e.g., changing an inverter's reactive power command from +0.5 kVAR to -2.0 kVAR. Grid impact: uncoordinated volt-var responses, feeder voltage violations, protection relay misoperation. (3) Inverter Firmware Compromise: Attacker exploits a vulnerability in the inverter's firmware update mechanism (e.g., unsigned firmware, insecure OTA update channel) to install malicious firmware. The compromised inverter can be commanded to trip offline simultaneously with others, inject harmonics, or operate outside grid-code limits. Grid impact: coordinated inverter tripping could cause sudden loss of generation — e.g., 100 compromised 10 kW inverters tripping simultaneously removes 1 MW, causing frequency deviation and potential under-frequency load shedding. (4) GPS Spoofing of Synchrophasors: Attacker transmits counterfeit GPS signals to spoof the time synchronization of Phasor Measurement Units (PMUs), which rely on GPS for microsecond-accurate timestamping. Time offsets of even 1 microsecond introduce phase angle errors of ~0.022 degrees at 60 Hz; larger offsets (>26 microseconds = 1 degree) can corrupt wide-area monitoring, making the system blind to actual oscillations or falsely triggering remedial action schemes. Grid impact: corrupted synchrophasor data leads to incorrect wide-area situational awareness, potentially triggering or missing needed remedial actions.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "cybersecurity_L1_003",
+      "category": "Cybersecurity",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "What are the key security requirements of IEEE 2030.5 (Smart Energy Profile 2.0, SEP2) for DER communications?\n(A) Optional TLS encryption with shared symmetric keys and no device authentication\n(B) Mandatory HTTPS with TLS 1.2, PKI-based mutual device authentication using X.509 certificates, role-based access control, and certificate revocation checking\n(C) IPsec VPN tunnels with pre-shared keys and MAC-address-based device identification\n(D) Application-layer encryption using AES-256 with out-of-band key exchange and no certificate infrastructure",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(B) IEEE 2030.5 mandates HTTPS with TLS 1.2 (minimum) for all communications between DER clients and servers. Key security requirements include: (1) PKI-based mutual authentication — both the server (utility/aggregator) and client (DER device) must present X.509 certificates signed by a trusted Certificate Authority within the IEEE 2030.5 PKI hierarchy. Device certificates contain the device's LFDI (Long-Form Device Identifier, a 160-bit SHA-256 hash of the certificate) and SFDI (Short-Form Device Identifier, a truncated 36-bit representation). (2) TLS cipher suites: ECDHE_ECDSA_WITH_AES_128_CCM_8 is the mandatory-to-implement cipher suite, using Elliptic Curve Diffie-Hellman Ephemeral key exchange with ECDSA signatures on the NIST P-256 curve. (3) Role-based access control: the standard defines resource-level access permissions, where a device's certificate attributes determine what resources it can read, write, or execute. (4) Certificate revocation: devices must check Certificate Revocation Lists (CRLs) or use OCSP to verify certificate validity. (5) Secure provisioning: initial device registration uses out-of-band PIN-based or QR-code-based provisioning to bind the device's certificate to the utility's registration system.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "cybersecurity_L1_004",
+      "category": "Cybersecurity",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Explain the key differences between IT (Information Technology) security and OT (Operational Technology) security in the context of power systems. Why can standard IT security practices be problematic when applied directly to OT environments?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "Key differences: (1) Priority triad: IT security prioritizes Confidentiality > Integrity > Availability (CIA). OT security inverts this to Availability > Integrity > Confidentiality (AIC) — a relay or SCADA system must remain operational; a few seconds of downtime can cause cascading outages affecting millions of customers. (2) Latency tolerance: IT systems can tolerate patch-and-reboot cycles, firewall deep packet inspection adding 10-50 ms latency, and security agent overhead. OT protection relays require deterministic operation with response times of 3-5 cycles (50-83 ms at 60 Hz); additional latency from security layers can cause protection failures. (3) System lifecycle: IT systems have 3-5 year refresh cycles. OT systems (RTUs, relays, PLCs) have 15-25 year lifecycles, meaning many run legacy OSes (Windows XP, proprietary RTOS) that cannot be patched or updated. (4) Patching constraints: IT patches are deployed weekly/monthly. OT patches require extensive testing in staging environments to ensure they do not disrupt real-time control; many OT vendors certify patches only quarterly, and applying patches requires planned outages. (5) Network segmentation: IT networks are routinely segmented with firewalls. OT networks historically used air-gapped or serial connections, but convergence with IT (IP-based protocols, cloud SCADA) has created new attack surfaces. (6) Endpoint security: IT deploys antivirus, EDR agents, and host firewalls on every endpoint. Many OT devices (embedded PLCs, relay IEDs) have 32 MB of RAM and no OS capable of running security agents. Standard IT practices that are problematic in OT: automatic Windows Update reboots on a SCADA HMI during grid operations; network vulnerability scanning (e.g., Nessus) that crashes DNP3 outstation firmware; deploying firewalls with stateful inspection that adds latency to GOOSE messages and causes protection coordination failures.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "cybersecurity_L1_005",
+      "category": "Cybersecurity",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "What is a false data injection (FDI) attack in the context of power system state estimation, and why can it bypass traditional bad data detection methods such as the Chi-squared (chi2) test?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "A false data injection attack targets the state estimation process in power system SCADA/EMS. In state estimation, the system solves z = h(x) + e, where z is the measurement vector (power flows, injections, voltage magnitudes), h() is the nonlinear measurement function based on network topology and parameters, x is the state vector (bus voltage magnitudes and angles), and e is the measurement noise. Traditional bad data detection computes the measurement residual r = z - h(x_hat) and applies the Chi-squared test: if ||r||^2 (the weighted sum of squared residuals, called the J(x) objective) exceeds the Chi-squared threshold for (m-n) degrees of freedom (m measurements, n states), bad data is flagged. An FDI attack constructs an attack vector a such that the corrupted measurements z_a = z + a produce a corrupted state x_a = x + c, where a = h(x+c) - h(x). For the DC power flow approximation, this simplifies to a = Hc, where H is the measurement Jacobian matrix. The key insight is that the residual under attack becomes r_a = z_a - h(x_a) = (z + a) - h(x + c) = z - h(x) + [a - (h(x+c) - h(x))] = r (the original residual). Since the residual is unchanged, the J(x) value is identical to the pre-attack value, and the Chi-squared test cannot detect the attack. The attacker needs knowledge of the network topology and parameters (the H matrix) but not the actual state values. This was first demonstrated by Liu, Ning, and Reiter (2011). Defenses include: protecting a strategic subset of measurements (e.g., PMUs with authenticated GPS), using machine learning detectors that capture temporal correlations, and deploying moving target defense strategies that perturb the H matrix unpredictably.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    }
+  ]
+}

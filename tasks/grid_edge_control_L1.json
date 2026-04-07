@@ -1,0 +1,118 @@
+{
+  "metadata": {
+    "category": "Grid-Edge Control",
+    "tier": "L1",
+    "source_platforms": [
+      {
+        "name": "IEEE 1547-2018",
+        "url": "https://standards.ieee.org/standard/1547-2018.html",
+        "type": "standards_document"
+      },
+      {
+        "name": "ANSI C84.1",
+        "url": "https://webstore.ansi.org/standards/nema/ansinemac842020r2025",
+        "type": "standards_document"
+      },
+      {
+        "name": "Kersting - Distribution System Modeling and Analysis",
+        "url": "https://doi.org/10.1201/9781315120782",
+        "type": "textbook"
+      }
+    ],
+    "ground_truth_references": [
+      "ANSI C84.1 Range A voltage tables",
+      "IEEE 1547-2018 Tables 8-10 (volt-var/volt-watt default curves), Table 16 (trip settings)",
+      "Kersting textbook Chapter 10 (voltage regulators)"
+    ],
+    "de_biasing_applied": [
+      "Questions test understanding of control mechanisms, not memorization of table values"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "grid_edge_control_L1_001",
+      "category": "Grid-Edge Control",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "According to ANSI C84.1 Range A for service voltage (120V nominal base), what is the acceptable steady-state voltage range in per-unit?\n(A) 0.90 - 1.10 p.u.\n(B) 0.95 - 1.05 p.u.\n(C) 0.917 - 1.058 p.u.\n(D) 0.95 - 1.05 p.u. at the point of utilization and 0.97 - 1.05 p.u. at the service entrance",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(C) 0.917 - 1.058 p.u. ANSI C84.1 Range A specifies the utilization voltage range as 110V to 126V on a 120V base, which is 0.917 to 1.050 p.u., and the service voltage range as 114V to 126V (0.950 to 1.050 p.u.). The full Range A band from service to utilization spans 0.917 to 1.058 p.u. Note: the exact boundaries depend on whether service or utilization voltage is referenced.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "grid_edge_control_L1_002",
+      "category": "Grid-Edge Control",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "In a volt-var control mode for a smart inverter per IEEE 1547-2018, what happens to the reactive power output when the local voltage rises above the dead-band upper limit?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "When the local voltage rises above the volt-var dead-band upper limit, the smart inverter absorbs reactive power (inductive behavior, negative Q). The amount of reactive power absorbed increases linearly with voltage according to the volt-var curve slope until it reaches the maximum reactive power capability of the inverter. This reactive power absorption acts to reduce the local voltage by increasing reactive power demand, counteracting the voltage rise typically caused by high PV generation on the feeder.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "grid_edge_control_L1_003",
+      "category": "Grid-Edge Control",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "What are the IEEE 1547-2018 default voltage trip settings (magnitude and clearing time) for Category II DERs? List all four voltage trip regions.",
+      "context": {},
+      "tools": [],
+      "ground_truth": "IEEE 1547-2018 Category II default voltage trip settings:\n1. OV2 (high overvoltage): V >= 1.20 p.u., clearing time = 0.16 seconds\n2. OV1 (overvoltage): V >= 1.10 p.u., clearing time = 13 seconds\n3. UV1 (undervoltage): V <= 0.70 p.u., clearing time = 10 seconds\n4. UV2 (deep undervoltage): V <= 0.45 p.u., clearing time = 0.16 seconds\nThese are the default settings; utilities may adjust within the ranges specified in Table 16 of the standard.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "grid_edge_control_L1_004",
+      "category": "Grid-Edge Control",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "What is the primary difference between a volt-watt and a volt-var inverter control function?\n(A) Volt-watt adjusts active power based on voltage; volt-var adjusts reactive power based on voltage.\n(B) Volt-watt operates at the transmission level; volt-var operates at the distribution level.\n(C) Volt-watt is faster than volt-var.\n(D) Volt-watt only applies to battery inverters; volt-var applies to PV inverters.",
+      "context": {},
+      "tools": [],
+      "ground_truth": "(A) Volt-watt adjusts active power based on voltage; volt-var adjusts reactive power based on voltage. Volt-watt curtails real power output as voltage rises above a threshold (typically 1.06-1.09 p.u.), directly reducing the power injection causing the voltage rise. Volt-var modulates reactive power (absorbing vars at high voltage, injecting vars at low voltage) to influence voltage via reactive power flow on the feeder impedance. Both functions can operate simultaneously on the same inverter.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    },
+    {
+      "task_id": "grid_edge_control_L1_005",
+      "category": "Grid-Edge Control",
+      "tier": "L1",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge"
+      ],
+      "prompt": "Explain how a line voltage regulator (step-type regulator with load tap changer) operates to maintain downstream voltage on a distribution feeder. What is the typical regulation range and step size?",
+      "context": {},
+      "tools": [],
+      "ground_truth": "A line voltage regulator is an autotransformer with a load tap changer (LTC) that adjusts its turns ratio to maintain downstream voltage at a target setpoint. It monitors the output voltage (often with line drop compensation to estimate voltage at a remote regulation point) and raises or lowers taps to keep voltage within the band. Each tap step changes the voltage by approximately 0.625% (5/8%), and a standard 32-step regulator provides a total regulation range of +/- 10% (16 steps up, 16 steps down). The regulator has a bandwidth setting (typically 1.5-3V on a 120V base, or about 1.25-2.5%) and a time delay (30-120 seconds) to avoid hunting on transient voltage fluctuations. When downstream voltage drops below the setpoint minus half the bandwidth, the regulator raises taps after the time delay; when voltage rises above the setpoint plus half the bandwidth, it lowers taps.",
+      "metrics": [
+        "accuracy"
+      ],
+      "scoring": "binary"
+    }
+  ]
+}

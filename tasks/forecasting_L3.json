@@ -1,0 +1,124 @@
+{
+  "metadata": {
+    "category": "DER Forecasting",
+    "tier": "L3",
+    "source_platforms": [
+      {
+        "name": "GEFCom2014 Solar Track",
+        "url": "https://en.wikipedia.org/wiki/Global_Energy_Forecasting_Competition",
+        "type": "forecasting_competition",
+        "last_accessed": "2025-03-01",
+        "writeup": "Hong et al., 'Probabilistic energy forecasting: GEFCom2014 and beyond', IJF Vol 32 Issue 3, 2016"
+      },
+      {
+        "name": "NREL SRRL (Golden, CO)",
+        "url": "https://midcdmz.nrel.gov/srrl_bms/",
+        "type": "open_dataset",
+        "last_accessed": "2025-03-01"
+      },
+      {
+        "name": "Kaggle AMS 2013-2014 Solar Energy Prediction",
+        "url": "https://www.kaggle.com/c/ams-2014-solar-energy-prediction-contest",
+        "type": "forecasting_competition",
+        "last_accessed": "2025-03-01",
+        "writeup": "Public solution notebooks on Kaggle"
+      },
+      {
+        "name": "pvlib-python + NSRDB",
+        "url": "https://pvlib-python.readthedocs.io/",
+        "type": "simulation_tool",
+        "last_accessed": "2025-03-01"
+      }
+    ],
+    "ground_truth_references": [
+      "GEFCom2014 winning solutions establish 8-14% MAPE baseline for day-ahead PV forecasting",
+      "NREL SRRL site data validates quantile regression calibration at Golden CO",
+      "pvlib clear-sky models provide deterministic baselines for skill score computation"
+    ],
+    "de_biasing_applied": [
+      "Tasks require building models from data, not recalling known results",
+      "Success criteria defined by metric thresholds, not specific model architectures",
+      "Data files are synthetic (generated via pvlib + noise) to prevent training data leakage"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "forecasting_L3_001",
+      "category": "DER Forecasting",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": ["domain_knowledge", "situational_reasoning", "execution_tool_use"],
+      "prompt": "Build a day-ahead solar PV forecast model using the provided historical time series data. Train the model on the training set, generate forecasts for the test period, and evaluate forecast accuracy. Report RMSE, MAE, MAPE (daytime hours only, GHI > 50 W/m2), and the forecast skill score relative to a persistence baseline. The final MAPE must be below 15% to pass.",
+      "context": {
+        "timeseries_file": "data/pv_forecast_train_test.csv",
+        "data_description": {
+          "columns": ["timestamp", "ghi_wm2", "temperature_c", "wind_speed_ms", "relative_humidity_pct", "pv_output_kw", "clear_sky_ghi_wm2"],
+          "train_period": "2024-01-01 to 2024-10-31",
+          "test_period": "2024-11-01 to 2024-11-30",
+          "temporal_resolution": "15 minutes",
+          "pv_capacity_kw": 500,
+          "location": "35.2N, 106.6W (Albuquerque, NM)"
+        },
+        "success_criteria": {
+          "mape_daytime_below_pct": 15,
+          "must_beat_persistence_skill_score": true,
+          "must_report_metrics": ["RMSE", "MAE", "MAPE", "skill_score"]
+        },
+        "instructions": [
+          "Load the CSV time series using query_timeseries.",
+          "Perform exploratory analysis: check for missing values, compute daily generation profiles, identify clear vs. cloudy days.",
+          "Engineer features: clear-sky index (kt = GHI / clear_sky_GHI), lagged PV output, hour-of-day, day-of-year, rolling statistics.",
+          "Train a regression model (e.g., gradient boosted trees) on the training set for day-ahead PV output prediction.",
+          "Generate day-ahead forecasts for each day in the test period.",
+          "Compute a persistence baseline (forecast = same hour output from previous day).",
+          "Calculate all required metrics and the skill score: SS = 1 - (RMSE_model / RMSE_persistence).",
+          "Return a summary report with all metrics."
+        ]
+      },
+      "tools": ["execute_python", "query_timeseries"],
+      "ground_truth": "A properly implemented gradient boosted model with clear-sky index and meteorological features should achieve daytime MAPE in the range of 8-14% for Albuquerque in November (predominantly clear with occasional frontal passages). The persistence baseline RMSE is typically 15-25% nRMSE for day-ahead, so the skill score should be positive (> 0.2). Key implementation checks: (1) no data leakage from test into training, (2) MAPE computed only for daytime hours with GHI > 50 W/m2, (3) persistence baseline uses t-24h values, (4) all four metrics reported.",
+      "metrics": ["accuracy", "code_execution_success"],
+      "scoring": "execution_based"
+    },
+    {
+      "task_id": "forecasting_L3_002",
+      "category": "DER Forecasting",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": ["domain_knowledge", "situational_reasoning", "execution_tool_use"],
+      "prompt": "A utility needs a probabilistic PV forecast to support reserve scheduling. Using the provided 2-year historical dataset, build a quantile regression forecast model that produces the 10th, 50th, and 90th percentile forecasts for 1-hour-ahead PV output. Evaluate the calibration of the prediction intervals: the 80% prediction interval (P10-P90) should contain approximately 80% of actual observations. Also compute the pinball loss for each quantile. The prediction interval calibration must be between 75% and 85% to pass.",
+      "context": {
+        "timeseries_file": "data/pv_probabilistic_2yr.csv",
+        "data_description": {
+          "columns": ["timestamp", "ghi_wm2", "dni_wm2", "dhi_wm2", "temperature_c", "cloud_cover_pct", "pv_output_kw", "clear_sky_ghi_wm2"],
+          "train_period": "2023-01-01 to 2024-06-30",
+          "test_period": "2024-07-01 to 2024-12-31",
+          "temporal_resolution": "15 minutes",
+          "pv_capacity_kw": 1000,
+          "location": "39.7N, 105.1W (Golden, CO, NREL SRRL site)"
+        },
+        "success_criteria": {
+          "prediction_interval_coverage_80pct": {"min": 75, "max": 85},
+          "must_report_metrics": ["pinball_loss_q10", "pinball_loss_q50", "pinball_loss_q90", "PI_coverage_80pct", "PI_average_width_kw"],
+          "daytime_filter": "GHI > 50 W/m2"
+        },
+        "instructions": [
+          "Load the 2-year CSV time series.",
+          "Split into training and test sets per the specified periods.",
+          "Engineer features: clear-sky index, recent cloud cover trend, temperature, lagged PV output (t-1h, t-2h, t-4h), hour-of-day.",
+          "Train a quantile regression model (e.g., quantile regression forests or gradient boosted quantile regression) for quantiles [0.10, 0.50, 0.90].",
+          "Generate 1-hour-ahead forecasts for each timestep in the test set.",
+          "Compute pinball loss for each quantile.",
+          "Compute the 80% prediction interval coverage: fraction of actual observations falling between P10 and P90.",
+          "Compute average prediction interval width.",
+          "Verify quantile crossing is absent (P10 <= P50 <= P90 for all timesteps).",
+          "Return a summary with all metrics."
+        ]
+      },
+      "tools": ["execute_python", "query_timeseries"],
+      "ground_truth": "A well-calibrated quantile regression model at NREL's SRRL site should achieve 80% PI coverage close to the nominal 80% (typically 77-83% with proper training). Pinball losses for Q50 should approximate half the MAE of a deterministic forecast. Key checks: (1) no quantile crossing in output, (2) PI coverage computed only on daytime periods, (3) separate quantile models or a single model with quantile loss, (4) average PI width should be reasonable (not trivially wide -- e.g., not spanning 0 to capacity for every timestep).",
+      "metrics": ["accuracy", "code_execution_success"],
+      "scoring": "execution_based"
+    }
+  ]
+}

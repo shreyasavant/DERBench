@@ -1,0 +1,134 @@
+{
+  "metadata": {
+    "category": "Distribution State Estimation",
+    "tier": "L2",
+    "source_platforms": [
+      {
+        "name": "IEEE 33-Bus Test Feeder (Baran & Wu)",
+        "url": "https://doi.org/10.1109/61.25627",
+        "type": "test_feeder"
+      },
+      {
+        "name": "pandapower State Estimation Module",
+        "url": "https://pandapower.readthedocs.io/en/latest/estimation.html",
+        "type": "simulation_tool"
+      },
+      {
+        "name": "Liu, Ning & Reiter 2011 (FDI Attacks)",
+        "url": "https://doi.org/10.1145/2046707.2046721",
+        "type": "research_paper"
+      }
+    ],
+    "ground_truth_references": [
+      "IEEE 33-bus feeder topology (Baran & Wu 1989) for observability analysis",
+      "Normalized residual bad data detection: threshold of 3.0 per Abur & Exposito",
+      "Micro-PMU data rates and hybrid SE approaches documented in NASPI reports"
+    ],
+    "de_biasing_applied": [
+      "Measurement tables provide raw data; LLM must compute normalized residuals independently",
+      "Observability analysis requires reasoning about meter gaps, not lookup",
+      "Cloud transient scenario requires integrating multiple temporal scales"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "state_estimation_L2_001",
+      "category": "Distribution State Estimation",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "Consider the IEEE 33-bus radial distribution feeder (buses numbered 0 through 32, with bus 0 as the substation). Smart meters providing real-time voltage magnitude and active/reactive power injection measurements are installed at the following buses: 0, 1, 5, 12, 17, 21, 24, 28, and 32. The feeder has the standard radial topology where bus 0 connects to bus 1, bus 1 connects to buses 2 and 18, bus 2 connects to bus 3, and so on along the main feeder and laterals.\n\nFor this 33-bus system:\n(a) Calculate the minimum number of measurements needed for full observability.\n(b) Determine whether the current meter placement (9 buses, each providing V, P, Q measurements = 27 total measurements) makes the system observable.\n(c) Identify which sections of the feeder are likely unobservable given gaps in meter coverage.\n(d) Recommend the minimum number of additional meter placements and suggest specific bus locations to achieve full observability.",
+      "context": {
+        "network": "IEEE 33-bus radial distribution feeder",
+        "num_buses": 33,
+        "metered_buses": [
+          0,
+          1,
+          5,
+          12,
+          17,
+          21,
+          24,
+          28,
+          32
+        ],
+        "measurements_per_meter": 3,
+        "total_measurements": 27,
+        "topology_summary": "Radial feeder. Main branch: 0-1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17. Lateral 1: 1-18-19-20-21. Lateral 2: 2-22-23-24. Lateral 3: 5-25-26-27-28-29-30-31-32."
+      },
+      "tools": [],
+      "ground_truth": "(a) The state vector has 2N - 1 = 2(33) - 1 = 65 independent state variables. Thus, a minimum of 65 independent measurements are required.\n(b) With 27 measurements and 65 required, the system is NOT observable (27 < 65). Even accounting for zero-injection buses or structural constraints, 27 measurements fall far short.\n(c) Unobservable sections include: buses 2-4 (gap between meters at 1 and 5), buses 6-11 (gap between 5 and 12), buses 13-16 (gap between 12 and 17), buses 18-20 (gap between 1 and 21), buses 22-23 (gap between metered point near bus 2 and bus 24), buses 25-27 (gap between 5 and 28), and buses 29-31 (gap between 28 and 32). Any bus segment without a meter in it or adjacent to it has uncertain voltage angles and potentially ambiguous power flow splits.\n(d) To approach observability, additional meters should be placed to fill the largest gaps. A practical recommendation is to add meters at approximately 6-8 additional buses: buses 3, 8, 10, 15, 19, 23, 27, and 30. This brings the total to roughly 17 metered buses (51 measurements). To fully close the gap to 65 measurements, additional branch power flow meters or pseudo-measurements from load forecasts for the remaining unmetered buses would be needed. Pure bus injection metering at around 22 buses would yield the 65+ measurements needed.",
+      "metrics": [
+        "correctness",
+        "reasoning_quality",
+        "completeness"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "state_estimation_L2_002",
+      "category": "Distribution State Estimation",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "You are reviewing the output of a WLS state estimator for a 13-bus radial distribution feeder. The estimator has converged and you now have the following measurement residuals. One measurement contains a gross error. Identify which measurement is most likely the bad data point, explain your reasoning using the normalized residual approach, and describe what corrective action should be taken.\n\nMeasurement table:\n| Meas. ID | Type      | Bus | Measured Value | Estimated Value | Residual | Meas. Std. Dev. (sigma) |\n|----------|-----------|-----|----------------|-----------------|----------|------------------------|\n| M1       | |V| (p.u.)| 1   | 1.020          | 1.019           | 0.001    | 0.004                  |\n| M2       | |V| (p.u.)| 3   | 1.015          | 1.013           | 0.002    | 0.004                  |\n| M3       | |V| (p.u.)| 5   | 1.008          | 1.010           | -0.002   | 0.004                  |\n| M4       | |V| (p.u.)| 7   | 1.150          | 1.006           | 0.144    | 0.004                  |\n| M5       | |V| (p.u.)| 9   | 1.003          | 1.002           | 0.001    | 0.004                  |\n| M6       | |V| (p.u.)| 11  | 0.998          | 0.997           | 0.001    | 0.004                  |\n| M7       | |V| (p.u.)| 13  | 0.995          | 0.993           | 0.002    | 0.004                  |\n| M8       | P_inj (MW)| 2   | 0.350          | 0.345           | 0.005    | 0.020                  |\n| M9       | P_inj (MW)| 6   | 0.280          | 0.275           | 0.005    | 0.020                  |\n| M10      | P_inj (MW)| 10  | 0.190          | 0.188           | 0.002    | 0.020                  |",
+      "context": {
+        "network": "13-bus radial feeder",
+        "estimator": "WLS, converged",
+        "num_measurements": 10,
+        "note": "One measurement contains a gross error. Neighboring buses to bus 7 (buses 6 and 8) have estimated voltages of 1.008 and 1.004 p.u. respectively, making a voltage of 1.150 p.u. at bus 7 physically implausible on a radial feeder."
+      },
+      "tools": [],
+      "ground_truth": "Measurement M4 (voltage magnitude at bus 7) is the bad data point.\n\nReasoning using normalized residuals: The normalized residual for each measurement is computed as r_i^N = |r_i| / sigma_i. Computing for each:\n- M1: |0.001|/0.004 = 0.25\n- M2: |0.002|/0.004 = 0.50\n- M3: |-0.002|/0.004 = 0.50\n- M4: |0.144|/0.004 = 36.0\n- M5: |0.001|/0.004 = 0.25\n- M6: |0.001|/0.004 = 0.25\n- M7: |0.002|/0.004 = 0.50\n- M8: |0.005|/0.020 = 0.25\n- M9: |0.005|/0.020 = 0.25\n- M10: |0.002|/0.020 = 0.10\n\nM4 has a normalized residual of 36.0, which vastly exceeds the standard threshold of 3.0. All other normalized residuals are below 1.0. Furthermore, a voltage of 1.150 p.u. at bus 7 is physically implausible when neighboring buses show 1.008 and 1.004 p.u. on a radial feeder where voltage drops monotonically from the substation.\n\nCorrective action: Remove measurement M4 from the measurement set, re-run the WLS state estimator, and then perform the Chi-squared test again to confirm no additional bad data remains. The faulty meter at bus 7 should be inspected or recalibrated.",
+      "metrics": [
+        "correctness",
+        "reasoning_quality",
+        "completeness"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "state_estimation_L2_003",
+      "category": "Distribution State Estimation",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "A 12.47 kV suburban distribution feeder serves 850 residential customers, of which 35% (approximately 298 homes) have rooftop PV systems with an aggregate installed capacity of 2.1 MW. The feeder has conventional SCADA telemetry at the substation and at 3 recloser locations, polling every 4 seconds. Two micro-PMUs are installed at buses 14 and 27, reporting synchrophasor voltage and current data at 120 samples/second.\n\nDuring a fast-moving cloud transient event at 1:42 PM on a sunny day, aggregate PV output drops from 1.8 MW to 0.72 MW (a 60% reduction) within 2 seconds, then recovers to 1.5 MW over the next 6 seconds.\n\n(a) Explain how this rapid PV fluctuation affects the accuracy of the conventional SCADA-based state estimator.\n(b) Quantify the potential voltage estimation error at feeder endpoints during the transient, given that 1 MW of net load change on this feeder typically produces a voltage change of approximately 0.015 p.u.\n(c) Propose a concrete mitigation strategy that leverages the available micro-PMU data to improve state estimation during such transients.",
+      "context": {
+        "feeder_voltage": "12.47 kV",
+        "num_customers": 850,
+        "pv_penetration": "35%",
+        "aggregate_pv_capacity_mw": 2.1,
+        "pre_transient_pv_output_mw": 1.8,
+        "during_transient_pv_output_mw": 0.72,
+        "recovery_pv_output_mw": 1.5,
+        "transient_drop_duration_sec": 2,
+        "recovery_duration_sec": 6,
+        "scada_polling_interval_sec": 4,
+        "micro_pmu_locations": [
+          14,
+          27
+        ],
+        "micro_pmu_sample_rate_hz": 120,
+        "voltage_sensitivity": "0.015 p.u. per 1 MW net load change"
+      },
+      "tools": [],
+      "ground_truth": "(a) The 4-second SCADA polling interval means the state estimator may entirely miss the PV nadir (which occurs at t+2 seconds). If a SCADA scan occurs at t=0 (pre-event) and the next at t=4 seconds (when PV is already partially recovering), the estimator never sees the 0.72 MW minimum. The state estimate during the transient will be based on stale measurements that do not reflect the actual 1.08 MW PV output swing. This creates a mismatch between the assumed pseudo-measurements for PV generation and the actual feeder conditions, leading to incorrect voltage and power flow estimates throughout the feeder.\n\n(b) The net load increase during the PV drop is approximately 1.8 - 0.72 = 1.08 MW. Using the sensitivity of 0.015 p.u. per MW, the voltage at feeder endpoints could drop by roughly 1.08 x 0.015 = 0.0162 p.u. (about 1.6%). If the SCADA-based estimator uses the pre-transient PV value of 1.8 MW, its voltage estimate could be wrong by approximately 0.016 p.u. at the feeder end. On a 12.47 kV base, this corresponds to about 200 V on the primary or about 1.9 V on a 120 V secondary \u2014 enough to cause ANSI C84.1 voltage violations if the feeder was already operating near the lower service limit.\n\n(c) A hybrid state estimation approach should be adopted. The micro-PMU data at buses 14 and 27 (streaming at 120 Hz) can detect the voltage transient within milliseconds. A two-stage estimator can be implemented: (1) Run a conventional WLS state estimate using SCADA data as the baseline at each 4-second scan. (2) Between SCADA scans, use the micro-PMU voltage and current phasor data as high-confidence real-time measurements to update the state vector through a linear update (since micro-PMUs provide direct state measurements of voltage magnitude and angle). The micro-PMU measurements can be incorporated into a tracking state estimator or a Kalman-filter-based dynamic state estimator that forecasts the state between SCADA scans and corrects using the PMU stream. This would reduce the effective estimation latency from 4 seconds to less than 100 milliseconds at the PMU-monitored buses, and interpolation models can propagate improved estimates to unmonitored buses.",
+      "metrics": [
+        "correctness",
+        "reasoning_quality",
+        "completeness"
+      ],
+      "scoring": "rubric"
+    }
+  ]
+}

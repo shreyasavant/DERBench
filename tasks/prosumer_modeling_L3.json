@@ -1,0 +1,300 @@
+{
+  "metadata": {
+    "category": "Prosumer Modeling",
+    "tier": "L3",
+    "source_platforms": [
+      {
+        "name": "CalTRACK / OpenEEmeter",
+        "url": "https://github.com/openeemeter/eemeter",
+        "type": "reference_implementation",
+        "writeup": "CalTRACK 2.0 specification + eemeter Python reference implementation"
+      },
+      {
+        "name": "ASHRAE GEPIII (Kaggle)",
+        "url": "https://www.kaggle.com/c/ashrae-energy-prediction",
+        "type": "competition",
+        "writeup": "4,000+ team solutions with published winning approaches"
+      },
+      {
+        "name": "Pecan Street Dataport",
+        "url": "https://www.pecanstreet.org/dataport/",
+        "type": "open_dataset"
+      },
+      {
+        "name": "EcoBee Donate Your Data",
+        "url": "https://www.ecobee.com/en-us/donate-your-data/",
+        "type": "open_dataset"
+      }
+    ],
+    "ground_truth_references": [
+      "CalTRACK R-squared > 0.70 threshold for acceptable baseline models",
+      "ASHRAE GEPIII leaderboard baselines for building energy prediction",
+      "Published HVAC flexibility envelopes from building simulation literature"
+    ],
+    "de_biasing_applied": [
+      "Code execution: model quality verified by metric thresholds, not specific coefficients",
+      "Flexibility ranking uses composite score formula provided, not subjective judgment"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "prosumer_modeling_L3_001",
+      "category": "Prosumer Modeling",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "execution_tool_use"
+      ],
+      "prompt": "Load the household's annual hourly consumption data from the provided CSV file. Fit a CalTRACK-style temperature-regression baseline model using outdoor temperature data. Use the model to predict counterfactual consumption for the DR event week (2024-07-15 to 2024-07-21), then compute the estimated demand response savings in kWh. Report the model's R-squared on the training period, the hourly baseline predictions for the event week, and total estimated savings.",
+      "context": {
+        "consumption_file": "data/prosumer_household_annual_hourly.csv",
+        "weather_file": "data/prosumer_outdoor_temp_hourly.csv",
+        "data_description": {
+          "consumption_columns": [
+            "timestamp",
+            "consumption_kw"
+          ],
+          "weather_columns": [
+            "timestamp",
+            "outdoor_temp_c"
+          ],
+          "temporal_resolution": "1 hour",
+          "training_period": "2024-01-01 to 2024-07-14",
+          "event_week": "2024-07-15 to 2024-07-21",
+          "location": "Sacramento, CA"
+        },
+        "model_specification": {
+          "method": "CalTRACK hourly segmented regression",
+          "segments": "Occupied (07:00-22:00) and Unoccupied (22:00-07:00)",
+          "features": [
+            "Piecewise-linear temperature response with heating change-point at 15 degC and cooling change-point at 18 degC",
+            "Hour-of-week indicators (168 bins, grouped into occupied/unoccupied)",
+            "Interaction between temperature terms and occupancy segment"
+          ],
+          "data_sufficiency": "Minimum 90 days of training data with <10% missing values"
+        },
+        "dr_event_details": {
+          "event_type": "Direct load control of HVAC, 50% cycling during 14:00-18:00 each day of the event week",
+          "actual_consumption_during_event_available": true,
+          "savings_calculation": "Counterfactual baseline prediction minus actual metered consumption during event hours"
+        },
+        "success_criteria": {
+          "model_r_squared_minimum": 0.7,
+          "must_report": [
+            "R_squared",
+            "CVRMSE_pct",
+            "hourly_baseline_predictions_event_week",
+            "total_savings_kwh",
+            "average_hourly_savings_kw_during_event_hours"
+          ],
+          "savings_must_be_positive": true
+        },
+        "instructions": [
+          "Load both CSV files using query_timeseries.",
+          "Merge on timestamp and handle any missing values (forward-fill up to 2 consecutive hours, drop remaining).",
+          "Compute heating and cooling degree-hour variables with the specified change-points.",
+          "Fit the segmented regression model on the training period.",
+          "Validate model: compute R-squared and CV(RMSE) on training data using 3-fold cross-validation by month.",
+          "Predict counterfactual consumption for each hour of the event week.",
+          "Compute savings = sum of (predicted - actual) for event hours (14:00-18:00 daily).",
+          "Generate a plot comparing baseline prediction vs actual consumption for the event week."
+        ]
+      },
+      "tools": [
+        "execute_python",
+        "query_timeseries"
+      ],
+      "ground_truth": "The model should achieve R-squared > 0.70 and CV(RMSE) < 25%. For a typical Sacramento home (~2,000 sq ft, central AC) during a July heat wave (outdoor temps 35-42 degC), the baseline model should predict peak-hour consumption of 3.5-5.0 kW during 14:00-18:00. With 50% HVAC cycling, actual consumption during event hours drops to approximately 2.0-3.0 kW. Expected savings per event day: (baseline - actual) summed over 4 event hours = approximately 6-10 kWh/day. Over 7 event days: total savings of approximately 42-70 kWh. Average hourly savings during event hours: 1.5-2.5 kW. The agent must correctly implement the piecewise-linear temperature model, properly segment occupied/unoccupied hours, and produce both numerical results and a visualization.",
+      "metrics": [
+        "accuracy",
+        "code_execution_success"
+      ],
+      "scoring": "execution_based"
+    },
+    {
+      "task_id": "prosumer_modeling_L3_002",
+      "category": "Prosumer Modeling",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "execution_tool_use"
+      ],
+      "prompt": "Given hourly consumption data for 10 homes and their HVAC specifications, compute per-home flexibility envelopes (maximum kW reduction, maximum sustainable duration, and recovery profile parameters) and rank the homes by overall DR potential. Output a summary table and flexibility envelope plots for the top 3 homes.",
+      "context": {
+        "data_file": "data/prosumer_10homes_hourly.csv",
+        "data_description": {
+          "columns": [
+            "timestamp",
+            "home_id",
+            "consumption_kw",
+            "outdoor_temp_c",
+            "indoor_temp_c"
+          ],
+          "temporal_resolution": "1 hour",
+          "period": "2024-06-01 to 2024-08-31 (summer)",
+          "homes_count": 10
+        },
+        "hvac_specs": [
+          {
+            "home_id": "H01",
+            "type": "central_ac",
+            "capacity_tons": 3.0,
+            "input_kw": 3.2,
+            "cop": 3.2,
+            "thermal_mass": "medium",
+            "setpoint_c": 23,
+            "max_setpoint_c": 26,
+            "floor_area_sqft": 1800
+          },
+          {
+            "home_id": "H02",
+            "type": "central_ac",
+            "capacity_tons": 4.0,
+            "input_kw": 4.5,
+            "cop": 2.9,
+            "thermal_mass": "high",
+            "setpoint_c": 22,
+            "max_setpoint_c": 25,
+            "floor_area_sqft": 2600
+          },
+          {
+            "home_id": "H03",
+            "type": "heat_pump",
+            "capacity_tons": 2.5,
+            "input_kw": 2.1,
+            "cop": 4.0,
+            "thermal_mass": "low",
+            "setpoint_c": 24,
+            "max_setpoint_c": 27,
+            "floor_area_sqft": 1400
+          },
+          {
+            "home_id": "H04",
+            "type": "central_ac",
+            "capacity_tons": 5.0,
+            "input_kw": 5.8,
+            "cop": 2.7,
+            "thermal_mass": "high",
+            "setpoint_c": 22,
+            "max_setpoint_c": 26,
+            "floor_area_sqft": 3200
+          },
+          {
+            "home_id": "H05",
+            "type": "heat_pump",
+            "capacity_tons": 3.0,
+            "input_kw": 2.5,
+            "cop": 3.8,
+            "thermal_mass": "medium",
+            "setpoint_c": 23,
+            "max_setpoint_c": 26,
+            "floor_area_sqft": 2000
+          },
+          {
+            "home_id": "H06",
+            "type": "central_ac",
+            "capacity_tons": 2.5,
+            "input_kw": 2.8,
+            "cop": 3.0,
+            "thermal_mass": "low",
+            "setpoint_c": 24,
+            "max_setpoint_c": 25,
+            "floor_area_sqft": 1500
+          },
+          {
+            "home_id": "H07",
+            "type": "central_ac",
+            "capacity_tons": 3.5,
+            "input_kw": 3.9,
+            "cop": 3.1,
+            "thermal_mass": "high",
+            "setpoint_c": 23,
+            "max_setpoint_c": 27,
+            "floor_area_sqft": 2200
+          },
+          {
+            "home_id": "H08",
+            "type": "heat_pump",
+            "capacity_tons": 4.0,
+            "input_kw": 3.3,
+            "cop": 4.1,
+            "thermal_mass": "medium",
+            "setpoint_c": 22,
+            "max_setpoint_c": 25,
+            "floor_area_sqft": 2400
+          },
+          {
+            "home_id": "H09",
+            "type": "central_ac",
+            "capacity_tons": 3.0,
+            "input_kw": 3.4,
+            "cop": 2.8,
+            "thermal_mass": "low",
+            "setpoint_c": 24,
+            "max_setpoint_c": 26,
+            "floor_area_sqft": 1700
+          },
+          {
+            "home_id": "H10",
+            "type": "central_ac",
+            "capacity_tons": 4.5,
+            "input_kw": 5.2,
+            "cop": 2.6,
+            "thermal_mass": "high",
+            "setpoint_c": 21,
+            "max_setpoint_c": 26,
+            "floor_area_sqft": 3000
+          }
+        ],
+        "flexibility_computation": {
+          "max_kw_reduction": "Based on HVAC input power and estimated duty cycle during peak hours (compute from consumption data)",
+          "max_duration_hours": "Determined by thermal comfort constraint: time for indoor temp to rise from setpoint to max_setpoint given outdoor conditions. Use thermal_mass category to estimate: low = 0.8 degC/hr rise, medium = 0.5 degC/hr rise, high = 0.3 degC/hr rise (at delta_T_outdoor_indoor = 15 degC)",
+          "recovery_profile": "After DR event ends, estimate the rebound: recovery_peak_kw = 1.3 * normal_peak_kw (30% overshoot), recovery_duration_hours = 0.5 * event_duration"
+        },
+        "dr_ranking_criteria": "Composite score = 0.4 * normalized_max_kw + 0.3 * normalized_duration + 0.2 * normalized_energy_capacity + 0.1 * (1 - normalized_recovery_penalty)",
+        "success_criteria": {
+          "must_output": [
+            "per_home_flexibility_table",
+            "ranked_list_with_composite_scores",
+            "flexibility_envelope_plots_top3"
+          ],
+          "must_include_columns": [
+            "home_id",
+            "max_kw_reduction",
+            "max_duration_hrs",
+            "energy_capacity_kwh",
+            "recovery_peak_kw",
+            "recovery_duration_hrs",
+            "composite_score",
+            "rank"
+          ]
+        },
+        "instructions": [
+          "Load the CSV consumption data using query_timeseries.",
+          "For each home, estimate the HVAC duty cycle during peak hours (14:00-18:00) by comparing consumption to HVAC input_kw.",
+          "Compute max kW reduction = HVAC input_kw * estimated_duty_cycle.",
+          "Compute max sustainable duration using thermal comfort constraints and the thermal mass rise rates.",
+          "Compute energy capacity = max_kw_reduction * max_duration.",
+          "Compute recovery parameters: peak rebound kW and recovery duration.",
+          "Calculate the composite DR score for each home and rank.",
+          "Generate flexibility envelope plots (power vs. time showing baseline, shed, and recovery phases) for the top 3 homes.",
+          "Output a formatted summary table with all metrics."
+        ]
+      },
+      "tools": [
+        "execute_python",
+        "query_timeseries"
+      ],
+      "ground_truth": "Expected ranking (approximate): Homes with high thermal mass and large temperature deadband (H04, H10, H07) should rank highest due to their ability to sustain load reduction for longer. H04 (5.0 ton, high thermal mass, 4 degC deadband) should have: max_kw_reduction ~4.5 kW (5.8 * 0.78 duty cycle), max_duration ~13.3 hrs (4 degC / 0.3 degC/hr), energy_capacity ~60 kWh, but capped at practical 4 hours for DR events yielding 18 kWh usable. H06 (low thermal mass, only 1 degC deadband) should rank lowest: max_duration ~1.25 hrs (1 / 0.8), limited energy capacity. The agent must correctly estimate duty cycles from consumption data, apply the thermal model, compute all metrics, produce the ranking table, and generate clear visualizations.",
+      "metrics": [
+        "accuracy",
+        "code_execution_success"
+      ],
+      "scoring": "execution_based"
+    }
+  ]
+}

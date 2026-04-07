@@ -1,0 +1,129 @@
+{
+  "metadata": {
+    "category": "Hosting Capacity Analysis",
+    "tier": "L3",
+    "source_platforms": [
+      {
+        "name": "IEEE 123-Bus Test Feeder (pandapower)",
+        "url": "https://cmte.ieee.org/pes-testfeeders/resources/",
+        "type": "test_feeder"
+      },
+      {
+        "name": "pandapower",
+        "url": "https://www.pandapower.org/",
+        "type": "simulation_tool"
+      },
+      {
+        "name": "NREL DISCO",
+        "url": "https://github.com/NREL/disco",
+        "type": "analysis_tool",
+        "writeup": "NREL open-source HC analysis with reproducible notebooks"
+      },
+      {
+        "name": "EPRI Stochastic HC Methodology",
+        "url": "https://www.epri.com/research/products/000000003002004777",
+        "type": "methodology",
+        "writeup": "EPRI 3002001278"
+      }
+    ],
+    "ground_truth_references": [
+      "pandapower.networks.case_ieee123() with documented network parameters",
+      "NREL DISCO published HC results on IEEE test feeders",
+      "EPRI stochastic HC methodology with Monte Carlo sampling approach"
+    ],
+    "de_biasing_applied": [
+      "Code execution tasks: correctness verified by simulation output, not memorization",
+      "Random seed specified for reproducibility without revealing expected numeric answer"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "hosting_capacity_L3_001",
+      "category": "Hosting Capacity Analysis",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "execution_tool_use"
+      ],
+      "prompt": "Perform an iterative hosting capacity analysis on the IEEE 123-bus test feeder using pandapower.\n\nYour task:\n1. Load the IEEE 123-bus pandapower network using pandapower.networks.case_ieee123().\n2. Set all loads to their minimum daytime values by scaling all load active powers (p_mw) to 30% of their nominal values. Keep reactive powers at original power factor.\n3. Select Bus 76 as the candidate bus for PV interconnection. Add a static generator (type='PV') at Bus 76 starting at 0 kW.\n4. Iteratively increase the PV generation in 100 kW (0.1 MW) increments. After each increment, run an AC power flow using pandapower.runpp().\n5. After each power flow, check two criteria:\n   a. Voltage criterion: All bus voltages must remain within [0.95, 1.05] p.u.\n   b. Thermal criterion: All line loading percentages must remain at or below 100%.\n6. The hosting capacity is the maximum PV generation at Bus 76 (in kW) for which both criteria are satisfied. Report the value at the last feasible increment (i.e., just before the first violation).\n7. Also report: which criterion was violated first (voltage or thermal), at which bus or line the violation occurred, and the voltage or loading value at the point of violation.\n\nWrite and execute a complete Python script to perform this analysis. Return the hosting capacity value, the binding constraint, and a summary of the voltage profile at key buses (substation, midpoint, Bus 76, and the bus with the highest voltage).",
+      "context": {
+        "network": "IEEE 123-bus (pandapower built-in: pandapower.networks.case_ieee123())",
+        "candidate_bus": 76,
+        "pv_increment_kw": 100,
+        "load_scaling_factor": 0.3,
+        "voltage_limits_pu": [
+          0.95,
+          1.05
+        ],
+        "thermal_limit_percent": 100,
+        "pv_power_factor": 1.0,
+        "max_iterations": 200,
+        "notes": "If the power flow diverges before a voltage or thermal violation is detected, report the last converged increment as the hosting capacity with a note about convergence failure. Use enforce_q_lims=False and algorithm='nr' for the power flow solver."
+      },
+      "tools": [
+        "run_powerflow",
+        "modify_network",
+        "execute_python",
+        "query_timeseries"
+      ],
+      "ground_truth": "The expected output is a Python script that: (1) loads the IEEE 123-bus network; (2) scales loads to 30%; (3) adds a PV static generator at Bus 76; (4) loops from 100 kW to 20,000 kW in 100 kW steps, running AC power flow each iteration; (5) checks max bus voltage > 1.05 p.u. and max line loading > 100%; (6) reports the last feasible PV size as the hosting capacity. The exact hosting capacity depends on the pandapower version and network model, but for the IEEE 123-bus network with loads at 30%, the hosting capacity at Bus 76 is typically in the range of 1,500 to 4,000 kW, limited by voltage rise at buses near the end of the feeder (often Bus 76 itself or adjacent buses reaching 1.05 p.u.). The binding constraint is almost always voltage (overvoltage) rather than thermal, because the IEEE 123-bus system has relatively well-sized conductors but long radial sections. A correct solution must include: the iterative loop, proper power flow execution, both violation checks, clear reporting of the hosting capacity value, and identification of the binding constraint.",
+      "metrics": [
+        "execution_success",
+        "correctness",
+        "code_quality",
+        "result_accuracy"
+      ],
+      "scoring": "execution_based"
+    },
+    {
+      "task_id": "hosting_capacity_L3_002",
+      "category": "Hosting Capacity Analysis",
+      "tier": "L3",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning",
+        "execution_tool_use"
+      ],
+      "prompt": "Perform a stochastic (Monte Carlo) hosting capacity analysis on the IEEE 123-bus test feeder using pandapower.\n\nYour task:\n1. Load the IEEE 123-bus pandapower network using pandapower.networks.case_ieee123().\n2. Scale all loads to 30% of nominal to represent minimum daytime conditions.\n3. Define 5 candidate buses for PV placement: Buses 15, 35, 54, 76, and 101.\n4. For each of 100 Monte Carlo trials:\n   a. Start from the base network (loads at 30%, no DER).\n   b. For each of the 5 candidate buses, independently sample a PV size from a uniform distribution between 50 kW and 500 kW. Each bus gets its own random PV installation.\n   c. Add all 5 PV systems as static generators (sgen, type='PV', power factor=1.0).\n   d. Run AC power flow (pandapower.runpp, algorithm='nr').\n   e. Record: total PV installed (sum of all 5), maximum bus voltage (p.u.), maximum line loading (%), and whether any violation occurred (voltage > 1.05 p.u. or line loading > 100%).\n5. After all 100 trials, compute:\n   a. The fraction of trials with at least one violation.\n   b. The probabilistic hosting capacity at the 95th percentile: the maximum total PV (kW) such that at least 95% of trials with total PV at or below that value have no violations. Operationally, sort all non-violating trials by total PV and report the 95th percentile of that distribution.\n   c. A histogram or summary statistics of total PV for violating vs non-violating trials.\n6. Set the random seed to 42 for reproducibility.\n\nWrite and execute a complete Python script. Report the probabilistic hosting capacity, the violation rate, and the key statistics.",
+      "context": {
+        "network": "IEEE 123-bus (pandapower built-in: pandapower.networks.case_ieee123())",
+        "candidate_buses": [
+          15,
+          35,
+          54,
+          76,
+          101
+        ],
+        "pv_size_distribution": "uniform(50, 500) kW per bus",
+        "num_trials": 100,
+        "random_seed": 42,
+        "load_scaling_factor": 0.3,
+        "voltage_limits_pu": [
+          0.95,
+          1.05
+        ],
+        "thermal_limit_percent": 100,
+        "pv_power_factor": 1.0,
+        "notes": "Each trial should start from a clean copy of the base network to avoid accumulating DER across trials. Use copy.deepcopy() or reload the network for each trial. If a power flow diverges in a trial, mark that trial as a violation. Use enforce_q_lims=False."
+      },
+      "tools": [
+        "run_powerflow",
+        "modify_network",
+        "execute_python",
+        "query_timeseries"
+      ],
+      "ground_truth": "The expected output is a Python script that: (1) loads the IEEE 123-bus network and scales loads; (2) runs 100 Monte Carlo trials with random PV at 5 buses; (3) checks voltage and thermal criteria each trial; (4) computes violation statistics and the 95th-percentile hosting capacity. With 5 buses each getting 50-500 kW (uniform), the total PV per trial ranges from 250 kW to 2,500 kW with a mean around 1,375 kW. The exact 95th-percentile hosting capacity depends on network characteristics and the random seed, but with seed=42 and the IEEE 123-bus system, typical results show: violation rates of 5-30% depending on the feeder's voltage sensitivity, and a 95th-percentile probabilistic hosting capacity in the range of 800-1,800 kW total. Violations are predominantly caused by overvoltage at buses near the feeder ends (especially Bus 76 and Bus 101 which tend to be electrically distant from the substation). A correct solution must include: proper Monte Carlo loop with network reset each trial, random sampling with fixed seed, power flow execution, violation checking, and statistical reporting including the 95th-percentile metric.",
+      "metrics": [
+        "execution_success",
+        "correctness",
+        "code_quality",
+        "statistical_validity",
+        "result_accuracy"
+      ],
+      "scoring": "execution_based"
+    }
+  ]
+}

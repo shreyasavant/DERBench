@@ -1,0 +1,216 @@
+{
+  "metadata": {
+    "category": "P2P Energy Trading",
+    "tier": "L2",
+    "source_platforms": [
+      {
+        "name": "Grid Singularity GSy-E",
+        "url": "https://github.com/gridsingularity/gsy-e",
+        "type": "simulation_platform"
+      },
+      {
+        "name": "Pecan Street Dataport",
+        "url": "https://www.pecanstreet.org/dataport/",
+        "type": "open_dataset"
+      },
+      {
+        "name": "Ausgrid Solar Home Data",
+        "url": "https://www.ausgrid.com.au/Industry/Our-Research/Data-to-share/Solar-home-electricity-data",
+        "type": "open_dataset"
+      }
+    ],
+    "ground_truth_references": [
+      "Double auction clearing: intersection of sorted supply/demand curves",
+      "Social welfare = consumer surplus + producer surplus, independent of payment rule",
+      "Battery arbitrage value computed from round-trip efficiency and price spread"
+    ],
+    "de_biasing_applied": [
+      "Market clearing requires step-by-step construction, not formula recall",
+      "Prosumer optimization has multiple valid strategies; evaluation is on reasoning quality",
+      "Price profiles derived from real market data patterns but anonymized"
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "p2p_trading_L2_001",
+      "category": "P2P Energy Trading",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "Four prosumers participate in a double auction for a single trading interval. Their profiles are:\n\n- Prosumer A (seller): 3.0 kWh surplus, ask price $0.06/kWh\n- Prosumer B (seller): 2.0 kWh surplus, ask price $0.08/kWh\n- Prosumer C (buyer): 2.5 kWh demand, bid price $0.12/kWh\n- Prosumer D (buyer): 4.0 kWh demand, bid price $0.09/kWh\n\nDetermine the clearing price, the energy allocated to each participant, and the total traded volume. Assume a uniform clearing price at the intersection of supply and demand curves.",
+      "context": {
+        "prosumers": [
+          {
+            "id": "A",
+            "role": "seller",
+            "quantity_kWh": 3.0,
+            "price_per_kWh": 0.06
+          },
+          {
+            "id": "B",
+            "role": "seller",
+            "quantity_kWh": 2.0,
+            "price_per_kWh": 0.08
+          },
+          {
+            "id": "C",
+            "role": "buyer",
+            "quantity_kWh": 2.5,
+            "price_per_kWh": 0.12
+          },
+          {
+            "id": "D",
+            "role": "buyer",
+            "quantity_kWh": 4.0,
+            "price_per_kWh": 0.09
+          }
+        ]
+      },
+      "tools": [],
+      "ground_truth": "Supply curve (ascending ask): A offers 3.0 kWh at $0.06, then B offers 2.0 kWh at $0.08 (cumulative: 3.0, 5.0 kWh). Demand curve (descending bid): C bids for 2.5 kWh at $0.12, then D bids for 4.0 kWh at $0.09 (cumulative: 2.5, 6.5 kWh). At $0.08 (B's ask), cumulative supply = 5.0 kWh and cumulative demand at prices >= $0.08 includes C's 2.5 kWh and D's 4.0 kWh = 6.5 kWh. At $0.09 (D's bid), cumulative demand = 6.5 kWh and cumulative supply at prices <= $0.09 = 5.0 kWh. The intersection occurs at 5.0 kWh total traded volume. The clearing price is between $0.08 and $0.09; using the midpoint convention, p* = $0.085/kWh. Allocations: Seller A sells 3.0 kWh, Seller B sells 2.0 kWh (total supply 5.0 kWh). Buyer C receives 2.5 kWh, Buyer D receives 2.5 kWh (D's full 4.0 kWh demand is partially filled since total supply = 5.0 kWh). Total traded volume: 5.0 kWh.",
+      "metrics": [
+        "clearing_price_accuracy",
+        "allocation_correctness",
+        "reasoning_quality"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "p2p_trading_L2_002",
+      "category": "P2P Energy Trading",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "Consider two market designs for a local energy market with 6 prosumers:\n\nProsumer profiles:\n- Sellers: S1 (2 kWh, ask $0.05), S2 (3 kWh, ask $0.07), S3 (1.5 kWh, ask $0.10)\n- Buyers: B1 (2 kWh, bid $0.14), B2 (3 kWh, bid $0.11), B3 (1.5 kWh, bid $0.08)\n\nDesign 1: Uniform price auction (single clearing price for all matched trades)\nDesign 2: Pay-as-bid auction (each buyer pays their own bid price, each seller receives their own ask price)\n\nFor each design, determine which trades are matched, compute the total social welfare, and explain which design yields higher social welfare and why.",
+      "context": {
+        "sellers": [
+          {
+            "id": "S1",
+            "quantity_kWh": 2.0,
+            "ask_price": 0.05
+          },
+          {
+            "id": "S2",
+            "quantity_kWh": 3.0,
+            "ask_price": 0.07
+          },
+          {
+            "id": "S3",
+            "quantity_kWh": 1.5,
+            "ask_price": 0.1
+          }
+        ],
+        "buyers": [
+          {
+            "id": "B1",
+            "quantity_kWh": 2.0,
+            "bid_price": 0.14
+          },
+          {
+            "id": "B2",
+            "quantity_kWh": 3.0,
+            "bid_price": 0.11
+          },
+          {
+            "id": "B3",
+            "quantity_kWh": 1.5,
+            "bid_price": 0.08
+          }
+        ]
+      },
+      "tools": [],
+      "ground_truth": "Uniform Price: Supply curve: S1 (2 kWh, $0.05), S2 (3 kWh, $0.07), S3 (1.5 kWh, $0.10). Cumulative: 2, 5, 6.5 kWh. Demand curve: B1 (2 kWh, $0.14), B2 (3 kWh, $0.11), B3 (1.5 kWh, $0.08). Cumulative: 2, 5, 6.5 kWh. Intersection at 5 kWh (between S2's ask $0.07 and B3's bid $0.08). Clearing price ~ $0.075-$0.08. Matched: S1 sells 2 kWh, S2 sells 3 kWh; B1 buys 2 kWh, B2 buys 3 kWh. B3 and S3 excluded. Social welfare = sum of (bid - ask) for matched pairs = (B1 surplus: 2*(0.14-0.05) + B2 matched with S2: effectively total SW = sum of buyer valuations minus sum of seller costs for matched volume) = 2*(0.14) + 3*(0.11) - 2*(0.05) - 3*(0.07) = 0.28 + 0.33 - 0.10 - 0.21 = $0.30. Pay-as-bid: Same matching (trades only occur where bid >= ask). Same 5 kWh traded, same participants matched. Social welfare = $0.30 (identical, since SW depends only on which trades occur, not how surplus is distributed). Both designs yield identical social welfare of $0.30 because SW is determined by the matched set, not the payment rule. The payment rule only affects how surplus is split between buyers and sellers. However, in practice, pay-as-bid auctions can reduce social welfare because participants strategically shade their bids, leading to suboptimal matching.",
+      "metrics": [
+        "market_analysis_accuracy",
+        "social_welfare_computation",
+        "reasoning_quality"
+      ],
+      "scoring": "rubric"
+    },
+    {
+      "task_id": "p2p_trading_L2_003",
+      "category": "P2P Energy Trading",
+      "tier": "L2",
+      "variant": "original",
+      "capability_dimensions": [
+        "domain_knowledge",
+        "situational_reasoning"
+      ],
+      "prompt": "A prosumer has a 5 kW rooftop solar PV system and a 10 kWh battery (usable capacity 8 kWh due to 20-80% SOC limits, 95% one-way efficiency). Their expected solar generation and household consumption for the next day are:\n\nHour  | Solar (kW) | Load (kW) | P2P Buy Price ($/kWh) | P2P Sell Price ($/kWh)\n------|------------|-----------|----------------------|----------------------\n0-6   | 0.0        | 0.8       | 0.08                 | 0.04\n6-9   | 1.5        | 1.2       | 0.10                 | 0.06\n9-12  | 4.5        | 0.5       | 0.07                 | 0.05\n12-15 | 5.0        | 0.7       | 0.06                 | 0.04\n15-18 | 2.0        | 1.5       | 0.12                 | 0.08\n18-21 | 0.0        | 2.5       | 0.18                 | 0.12\n21-24 | 0.0        | 1.0       | 0.11                 | 0.07\n\nThe battery starts at 50% SOC (5 kWh stored, 3 kWh usable above minimum). Determine the optimal self-consumption vs. P2P selling strategy to maximize the prosumer's net benefit (revenue from sales minus cost of purchases). Explain your reasoning for battery charge/discharge decisions.",
+      "context": {
+        "solar_kW": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.5,
+          1.5,
+          1.5,
+          4.5,
+          4.5,
+          4.5,
+          5.0,
+          5.0,
+          5.0,
+          2.0,
+          2.0,
+          2.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "load_kW": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          1.2,
+          1.2,
+          1.2,
+          0.5,
+          0.5,
+          0.5,
+          0.7,
+          0.7,
+          0.7,
+          1.5,
+          1.5,
+          1.5,
+          2.5,
+          2.5,
+          2.5,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "battery_kWh": 10.0,
+        "soc_min": 0.2,
+        "soc_max": 0.8,
+        "soc_initial": 0.5,
+        "efficiency_one_way": 0.95
+      },
+      "tools": [],
+      "ground_truth": "Key insight: Store cheap midday solar surplus in battery, discharge during expensive evening hours (18-21, $0.18/kWh buy price). Strategy: Hours 0-6: No solar. Buy 0.8 kW from P2P at $0.08. Optionally discharge battery to avoid buying, but $0.08 is relatively cheap so conserve battery for evening. Net: buy 4.8 kWh at $0.08 = -$0.384. Hours 6-9: Solar (1.5 kW) covers load (1.2 kW). Surplus 0.3 kW/hr, charge battery with 0.9 kWh over 3 hrs (0.855 kWh stored after efficiency). Hours 9-15: Large solar surplus. Net surplus 9-12: (4.5-0.5)*3 = 12 kWh; 12-15: (5.0-0.7)*3 = 12.9 kWh. Total surplus ~24.9 kWh over 6 hrs. Charge battery to max (need ~4.15 kWh to fill from current ~5.855 kWh to 8 kWh, requires ~4.37 kWh input at 95% efficiency). Sell remaining surplus (~20.5 kWh) at $0.04-0.05/kWh. Hours 15-18: Solar (2.0) mostly covers load (1.5). Small 0.5 kW surplus, sell at $0.08. Hours 18-21: No solar, 2.5 kW load. Discharge battery to cover load, avoiding $0.18/kWh purchases. 3 hrs * 2.5 kW = 7.5 kWh needed. Battery has 8 kWh usable, discharge delivers 8*0.95 = 7.6 kWh. Covers nearly all evening load. Hours 21-24: Remaining battery (~0.1 kWh usable) mostly depleted. Buy 1.0 kW at $0.11. The critical optimization is time-shifting solar energy via battery from midday (low sell price $0.04-0.05) to evening (avoided buy price $0.18), yielding ~$0.13-0.14/kWh arbitrage value per kWh stored, minus round-trip efficiency losses (0.95^2 = 0.9025). Net arbitrage benefit: ~8 kWh * ($0.18 - $0.05) * 0.9025 = ~$0.94 compared to selling midday and buying evening.",
+      "metrics": [
+        "strategy_optimality",
+        "battery_management",
+        "numerical_accuracy",
+        "reasoning_quality"
+      ],
+      "scoring": "rubric"
+    }
+  ]
+}
